@@ -12,9 +12,9 @@
     </div>
 
     <!-- Announcement Banner -->
-    <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin-bottom: 30px; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
-      <strong style="color: #e65100;">📢 Pengumuman:</strong>
-      <span style="color: #333;">Libur Nasional Idul Adha dan Cuti Bersama pada tanggal 20-21 Agustus. Pastikan stok kebaya aman.</span>
+    <div v-if="upcomingHoliday" style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin-bottom: 30px; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
+      <strong style="color: #e65100;">📢 Pengumuman Libur:</strong>
+      <span style="color: #333;">Mendekati <strong>{{ upcomingHoliday.name }}</strong> pada tanggal {{ new Date(upcomingHoliday.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) }}. Pastikan ketersediaan stok kebaya!</span>
     </div>
 
     <!-- 1. Quick Rent Integrated Form -->
@@ -69,15 +69,18 @@
           <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <div style="flex: 1;">
               <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Waktu Sewa</label>
-              <input type="date" v-model="quickForm.startDate" class="input" @change="calculateCost" />
+              <input type="date" v-model="quickForm.startDate" class="input" @change="onStartDateChange" />
             </div>
             <div style="flex: 1;">
               <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Kembali (Ekspektasi)</label>
-              <input type="date" v-model="quickForm.returnDate" class="input" @change="calculateCost" />
+              <input type="date" v-model="quickForm.returnDate" class="input" @change="onReturnDateChange" />
             </div>
           </div>
           <p style="font-weight: bold;">Durasi: <span style="color: var(--primary-color);">{{ rentalDuration }} Hari</span></p>
-          <p style="font-weight: bold; font-size: 1.2rem;">Total Biaya: <span style="color: var(--success);">Rp {{ totalCost }}</span></p>
+          <p style="font-weight: bold; font-size: 1.2rem; margin-bottom: 5px;">Total Biaya: <span style="color: var(--success);">Rp {{ totalCost }}</span></p>
+          <p v-if="quickForm.depositAmount > 0" style="font-weight: bold; font-size: 1rem; color: var(--text-main);">
+            Sisa Tagihan: <span style="color: var(--danger);">Rp {{ Math.max(0, totalCost - quickForm.depositAmount) }}</span>
+          </p>
         </div>
 
         <div>
@@ -186,11 +189,12 @@ const dueRentals = ref<any[]>([]);
 const customers = ref<any[]>([]);
 const kebayas = ref<any[]>([]);
 const processing = ref(false);
+const upcomingHoliday = ref<any>(null);
 
 const todayStr = new Date().toISOString().split('T')[0];
-const nextWeek = new Date();
-nextWeek.setDate(nextWeek.getDate() + 7);
-const nextWeekStr = nextWeek.toISOString().split('T')[0];
+const defaultReturn = new Date();
+defaultReturn.setDate(defaultReturn.getDate() + 2);
+const defaultReturnStr = defaultReturn.toISOString().split('T')[0];
 
 const quickForm = ref({
   customerSearch: '',
@@ -198,13 +202,13 @@ const quickForm = ref({
   newCustomerPhone: '',
   kebayaId: '',
   startDate: todayStr,
-  returnDate: nextWeekStr,
+  returnDate: defaultReturnStr,
   depositAmount: 0,
   depositPaid: false
 });
 
 const isNewCustomer = ref(false);
-const rentalDuration = ref(7);
+const rentalDuration = ref(3);
 const totalCost = ref(0);
 
 const availableKebayas = computed(() => kebayas.value.filter(k => k.availableStock > 0));
@@ -225,11 +229,27 @@ const onCustomerSelect = () => {
   }
 };
 
+let returnDateManuallyChanged = false;
+
+const onStartDateChange = () => {
+  if (!returnDateManuallyChanged) {
+    const start = new Date(quickForm.value.startDate);
+    start.setDate(start.getDate() + 2);
+    quickForm.value.returnDate = start.toISOString().split('T')[0];
+  }
+  calculateCost();
+};
+
+const onReturnDateChange = () => {
+  returnDateManuallyChanged = true;
+  calculateCost();
+};
+
 const calculateCost = () => {
   const start = new Date(quickForm.value.startDate);
   const end = new Date(quickForm.value.returnDate);
   const msPerDay = 1000 * 60 * 60 * 24;
-  let days = Math.ceil((end.getTime() - start.getTime()) / msPerDay);
+  let days = Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1; // start of renting = day 1
   if (days < 1) days = 1;
   rentalDuration.value = days;
 
@@ -254,6 +274,24 @@ const fetchData = async () => {
     r.status === 'Active' && 
     (new Date(r.expectedReturnDate) < today || !r.depositPaid)
   );
+
+  try {
+    const eventsRes = await fetch(`http://localhost:3001/api/events?year=${today.getFullYear()}`);
+    const eventsData = await eventsRes.json();
+    const todayZero = new Date();
+    todayZero.setHours(0,0,0,0);
+    const nextHoliday = eventsData.find((e: any) => new Date(e.date) >= todayZero && e.isPublicHoliday);
+    if (nextHoliday) {
+      // Only show if it's within the next 30 days
+      const diffTime = new Date(nextHoliday.date).getTime() - todayZero.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays <= 30) {
+        upcomingHoliday.value = nextHoliday;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load upcoming holiday');
+  }
 };
 
 const goToReturn = (id: string) => {

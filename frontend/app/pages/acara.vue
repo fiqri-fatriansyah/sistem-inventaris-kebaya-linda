@@ -14,6 +14,13 @@
         <input v-model="form.date" type="date" class="input" />
         <label>Deskripsi</label>
         <input v-model="form.description" class="input" />
+        <label>Pengulangan</label>
+        <select v-model="form.recurring" class="input">
+          <option value="none">Tidak Ada</option>
+          <option value="weekly">Setiap Minggu</option>
+          <option value="monthly">Setiap Bulan</option>
+          <option value="yearly">Setiap Tahun</option>
+        </select>
         <button class="btn" @click="addEvent">Simpan</button>
         <button class="btn" @click="showForm = false" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
       </div>
@@ -29,12 +36,23 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in events" :key="e._id">
-            <td>{{ new Date(e.date).toLocaleDateString('id-ID') }}</td>
-            <td>{{ e.name }}</td>
+          <tr v-for="e in events" :key="e._id + e.date">
+            <td>
+              {{ new Date(e.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+              <span v-if="e.recurring !== 'none'" style="font-size: 0.7em; background: var(--primary-color); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block;">
+                 <template v-if="e.recurring === 'weekly'">Mingguan</template>
+                 <template v-else-if="e.recurring === 'monthly'">Bulanan</template>
+                 <template v-else-if="e.recurring === 'yearly'">Tahunan</template>
+               </span>
+            </td>
+            <td>
+              {{ e.name }}
+              <span v-if="e.isPublicHoliday" style="font-size: 0.7em; background: var(--danger); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block; margin-top: 5px;">Libur Nasional</span>
+            </td>
             <td>{{ e.description }}</td>
             <td>
-              <button class="btn" style="background: var(--danger); padding: 5px 10px; font-size: 0.8em;" @click="deleteEvent(e._id)">Hapus</button>
+              <button class="btn" style="background: var(--danger); padding: 5px 10px; font-size: 0.8em;" @click="deleteEvent(e._id)" v-if="!e.isPublicHoliday">Hapus</button>
+              <span v-else style="font-size: 0.8em; color: var(--text-muted); font-style: italic;">Otomatis (Sistem)</span>
             </td>
           </tr>
         </tbody>
@@ -51,7 +69,7 @@ const { getEvents } = useApi();
 const events = ref<any[]>([]);
 const pending = ref(true);
 const showForm = ref(false);
-const form = ref({ name: '', date: '', description: '' });
+const form = ref({ name: '', date: '', description: '', recurring: 'none' });
 
 const fetchEvents = async () => {
   pending.value = true;
@@ -68,7 +86,7 @@ const addEvent = async () => {
       body: JSON.stringify(form.value)
     });
     showForm.value = false;
-    form.value = { name: '', date: '', description: '' };
+    form.value = { name: '', date: '', description: '', recurring: 'none' };
     fetchEvents();
   } catch (err) {
     alert('Gagal menambah acara');

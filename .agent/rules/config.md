@@ -30,6 +30,8 @@ Always use commit when needed, with proper message.
 Always create a new branch for new features or bug fixes.
 Always use proper naming convention for the branch names.
 Always push the branch to the remote repository after commit.
+.agent/rules and docs/Notes.md must not be inside main, but must be inside other branches.
+Readme.md must not mention existence of .agent/rules and docs/Notes.md inside main, but must be mentioned inside other branches.
 
 # Documentation
 Always document the code changes in the documentation files.
