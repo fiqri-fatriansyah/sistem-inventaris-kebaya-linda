@@ -15,3 +15,16 @@ It is built using the MEVN stack (MongoDB, Express.js, Vue 3 / Nuxt 4, Node.js) 
 - **Kebaya**: `name` (String), `type` (String), `price` (Number), `totalStock` (Number), `availableStock` (Number).
 - **Customer**: `name` (String), `contactInfo` (String).
 - **RentalTransaction**: `customerId` (ObjectId, ref: Customer), `kebayaId` (ObjectId, ref: Kebaya), `rentalStartTime` (Date), `rentalEndTime` (Date, optional), `amountToPay` (Number), `status` (String: 'Active' | 'Completed').
+
+### API Endpoints
+- **Kebaya**: 
+  - `GET /api/kebayas`: List all kebayas.
+  - `POST /api/kebayas`: Create a new kebaya.
+  - `PUT /api/kebayas/:id`: Update a kebaya.
+- **Customer**: 
+  - `GET /api/customers`: List all customers.
+  - `POST /api/customers`: Register a new customer.
+- **Rental**: 
+  - `GET /api/rentals/active`: List all active rentals.
+  - `POST /api/rentals`: Rent a kebaya (automatically decreases available stock).
+  - `POST /api/rentals/:id/return`: Return a kebaya (automatically increases available stock).

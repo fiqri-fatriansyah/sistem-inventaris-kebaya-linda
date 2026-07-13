@@ -12,6 +12,15 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Routes
+import kebayaRoutes from './routes/kebaya';
+import customerRoutes from './routes/customer';
+import rentalRoutes from './routes/rental';
+
+app.use('/api/kebayas', kebayaRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/rentals', rentalRoutes);
+
 // Database Connection
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/kebaya-linda';
 mongoose.connect(mongoURI)
