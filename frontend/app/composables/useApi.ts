@@ -21,5 +21,7 @@ export const useApi = () => {
     getKebayas: () => fetchApi('/kebayas'),
     getCustomers: () => fetchApi('/customers'),
     getActiveRentals: () => fetchApi('/rentals/active'),
+    getEvents: () => fetchApi('/events'),
+    getDashboardStats: () => fetchApi('/dashboard/stats')
   };
 };

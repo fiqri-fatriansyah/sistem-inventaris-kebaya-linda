@@ -1,23 +1,51 @@
 <template>
   <div>
     <h1 class="page-title">Data Penyewaan</h1>
-    <div class="glass-card">
+    
+    <div class="material-card" style="margin-bottom: 20px;">
+      <h3 style="margin-bottom: 10px;">Laporan & Export</h3>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="http://localhost:3001/api/reports/renting" target="_blank">
+          <button class="btn" style="background: #107c41;">Export Laporan Penyewaan</button>
+        </a>
+        <span style="color: var(--surface-border)">|</span>
+        <select v-model="financialRange" class="input" style="width: auto; margin-bottom: 0;">
+          <option value="daily">Harian</option>
+          <option value="weekly">Mingguan</option>
+          <option value="monthly">Bulanan</option>
+          <option value="quarterly">Kuartal</option>
+          <option value="yearly">Tahunan</option>
+          <option value="">Semua Waktu</option>
+        </select>
+        <a :href="'http://localhost:3001/api/reports/financial?range=' + financialRange" target="_blank">
+          <button class="btn" style="background: #107c41;">Export Laporan Keuangan</button>
+        </a>
+      </div>
+    </div>
+
+    <div class="material-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Penyewaan Aktif</h2>
         <button class="btn" @click="showForm = true">Sewa Kebaya</button>
       </div>
 
-      <div v-if="showForm" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+      <div v-if="showForm" style="margin-bottom: 20px; padding: 15px; border: 1px solid var(--surface-border); border-radius: 8px;">
+        <label>Pelanggan</label>
         <select v-model="form.customerId" class="input">
           <option value="" disabled>Pilih Pelanggan</option>
           <option v-for="c in customers" :key="c._id" :value="c._id">{{ c.name }}</option>
         </select>
+        
+        <label>Kebaya</label>
         <select v-model="form.kebayaId" class="input">
           <option value="" disabled>Pilih Kebaya</option>
-          <option v-for="k in availableKebayas" :key="k._id" :value="k._id">{{ k.name }} (Stok Tersedia: {{ k.availableStock }})</option>
+          <option v-for="k in availableKebayas" :key="k._id" :value="k._id">
+            {{ k.jenis }} - {{ k.warna }} (Stok: {{ k.availableStock }})
+          </option>
         </select>
+
         <button class="btn" @click="rentKebaya" style="margin-top: 10px">Sewa</button>
-        <button class="btn" @click="showForm = false" style="background: var(--surface-border); margin-left: 10px;">Batal</button>
+        <button class="btn" @click="showForm = false" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
       </div>
 
       <div v-if="pending">Memuat...</div>
@@ -33,8 +61,13 @@
         <tbody>
           <tr v-for="r in rentals" :key="r._id">
             <td>{{ r.customerId?.name || 'Unknown' }}</td>
-            <td>{{ r.kebayaId?.name || 'Unknown' }}</td>
-            <td>{{ new Date(r.rentalStartTime).toLocaleString('id-ID') }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img v-if="r.kebayaId?.imageUrl" :src="'http://localhost:3001' + r.kebayaId.imageUrl" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;" />
+                {{ r.kebayaId?.jenis || 'Unknown' }} ({{ r.kebayaId?.warna || '' }})
+              </div>
+            </td>
+            <td>{{ new Date(r.rentalStartTime).toLocaleDateString('id-ID') }}</td>
             <td>
               <button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.9em; color: #fff;" @click="returnKebaya(r._id, r.kebayaId?.price || 0)">Kembalikan</button>
             </td>
@@ -59,6 +92,7 @@ const customers = ref<any[]>([]);
 const pending = ref(true);
 const showForm = ref(false);
 const form = ref({ customerId: '', kebayaId: '' });
+const financialRange = ref('monthly');
 
 const availableKebayas = computed(() => kebayas.value.filter(k => k.availableStock > 0));
 
@@ -105,3 +139,4 @@ const returnKebaya = async (rentalId: string, price: number) => {
 
 onMounted(fetchData);
 </script>
+<style scoped>label { font-size: 0.9em; font-weight: 500; display: block; margin-bottom: 5px; color: var(--text-muted); }</style>

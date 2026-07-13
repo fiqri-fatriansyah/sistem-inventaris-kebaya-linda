@@ -3,10 +3,12 @@
     <aside class="sidebar">
       <div class="brand">Kebaya Linda</div>
       <nav>
-        <NuxtLink to="/" class="nav-link" exact>Dasbor</NuxtLink>
+        <NuxtLink to="/" class="nav-link" exact>Utama</NuxtLink>
+        <NuxtLink to="/dasbor" class="nav-link">Dasbor</NuxtLink>
         <NuxtLink to="/inventaris" class="nav-link">Inventaris</NuxtLink>
         <NuxtLink to="/penyewaan" class="nav-link">Penyewaan</NuxtLink>
         <NuxtLink to="/pelanggan" class="nav-link">Pelanggan</NuxtLink>
+        <NuxtLink to="/acara" class="nav-link">Acara & Libur</NuxtLink>
       </nav>
     </aside>
     <main class="main-content">

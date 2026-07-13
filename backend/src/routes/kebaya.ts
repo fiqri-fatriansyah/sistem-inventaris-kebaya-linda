@@ -1,12 +1,23 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
 import Kebaya from '../models/Kebaya';
 
 const router = Router();
 
-// Create Kebaya
-router.post('/', async (req: Request, res: Response) => {
+// Multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, '../../public/uploads')),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
+
+router.post('/', upload.single('image'), async (req: Request, res: Response) => {
   try {
-    const kebaya = new Kebaya(req.body);
+    const data = { ...req.body };
+    if (req.file) data.imageUrl = '/uploads/' + req.file.filename;
+    
+    const kebaya = new Kebaya(data);
     await kebaya.save();
     res.status(201).json(kebaya);
   } catch (err: any) {
@@ -14,7 +25,6 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// Get all Kebayas
 router.get('/', async (req: Request, res: Response) => {
   try {
     const kebayas = await Kebaya.find();
@@ -24,10 +34,12 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Update Kebaya stock or details
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', upload.single('image'), async (req: Request, res: Response) => {
   try {
-    const kebaya = await Kebaya.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const data = { ...req.body };
+    if (req.file) data.imageUrl = '/uploads/' + req.file.filename;
+
+    const kebaya = await Kebaya.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!kebaya) return res.status(404).json({ error: 'Kebaya not found' });
     res.json(kebaya);
   } catch (err: any) {

@@ -1,13 +1,13 @@
 :root {
-  --bg-color: #121212;
-  --surface-color: #1e1e1e;
-  --surface-border: #333;
-  --primary-color: #d4af37; /* Gold accent for Kebaya boutique */
-  --primary-hover: #b8952b;
-  --text-main: #ffffff;
-  --text-muted: #aaaaaa;
-  --danger: #ff4757;
-  --success: #2ed573;
+  --bg-color: #f5f5f6; /* Material Grey 100 */
+  --surface-color: #ffffff; /* Pure white */
+  --surface-border: #e0e0e0; /* Material Grey 300 */
+  --primary-color: #6200ea; /* Material Deep Purple */
+  --primary-hover: #3700b3;
+  --text-main: #212121; /* Material Grey 900 */
+  --text-muted: #757575; /* Material Grey 600 */
+  --danger: #d32f2f;
+  --success: #388e3c;
 }
 
 * {
@@ -17,7 +17,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-main);
   line-height: 1.5;
@@ -30,12 +30,12 @@ body {
 
 .sidebar {
   width: 250px;
-  background: rgba(30, 30, 30, 0.7);
-  backdrop-filter: blur(10px);
+  background: var(--surface-color);
   border-right: 1px solid var(--surface-border);
   padding: 20px;
   display: flex;
   flex-direction: column;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 
 .brand {
@@ -50,20 +50,20 @@ body {
   color: var(--text-muted);
   text-decoration: none;
   padding: 12px 15px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  transition: all 0.3s ease;
+  border-radius: 4px; /* Material Design small radius */
+  margin-bottom: 5px;
+  transition: all 0.2s ease;
   font-weight: 500;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #f0f0f0;
   color: var(--text-main);
 }
 
 .nav-link.router-link-active {
-  background-color: var(--primary-color);
-  color: #000;
+  background-color: #ede7f6; /* Deep Purple 50 */
+  color: var(--primary-color);
 }
 
 .main-content {
@@ -74,32 +74,55 @@ body {
 
 .page-title {
   font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 20px;
+  font-weight: 400; /* Material Design Headers */
+  margin-bottom: 24px;
   color: var(--text-main);
 }
 
-.glass-card {
-  background: rgba(30, 30, 30, 0.5);
-  backdrop-filter: blur(12px);
+.glass-card, .material-card {
+  background: var(--surface-color);
   border: 1px solid var(--surface-border);
-  border-radius: 12px;
+  border-radius: 8px; /* Standard Material Card */
   padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .btn {
   background-color: var(--primary-color);
-  color: #000;
+  color: #fff; /* White text on primary */
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .btn:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+
+.input { 
+  width: 100%; 
+  padding: 12px 16px; 
+  margin-bottom: 16px; 
+  border-radius: 4px; 
+  border: 1px solid var(--surface-border); 
+  background: #fff; 
+  color: var(--text-main); 
+  font-size: 1rem;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.2);
+}
+
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { padding: 16px; text-align: left; border-bottom: 1px solid var(--surface-border); }
+.table th { color: var(--text-muted); font-weight: 500; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;}

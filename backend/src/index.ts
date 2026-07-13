@@ -12,14 +12,23 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+import path from 'path';
 import kebayaRoutes from './routes/kebaya';
 import customerRoutes from './routes/customer';
 import rentalRoutes from './routes/rental';
+import eventRoutes from './routes/event';
+import dashboardRoutes from './routes/dashboard';
+import reportsRoutes from './routes/reports';
+
+// Static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 
 app.use('/api/kebayas', kebayaRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/rentals', rentalRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Database Connection
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/kebaya-linda';
