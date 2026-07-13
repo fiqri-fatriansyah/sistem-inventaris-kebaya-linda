@@ -1,13 +1,13 @@
 :root {
-  --bg-color: #f5f5f6; /* Material Grey 100 */
-  --surface-color: #ffffff; /* Pure white */
-  --surface-border: #e0e0e0; /* Material Grey 300 */
-  --primary-color: #6200ea; /* Material Deep Purple */
-  --primary-hover: #3700b3;
-  --text-main: #212121; /* Material Grey 900 */
-  --text-muted: #757575; /* Material Grey 600 */
-  --danger: #d32f2f;
-  --success: #388e3c;
+  --primary-color: #d81b60;
+  --primary-hover: #c2185b;
+  --bg-color: #F8F9FA; /* Off-white / menyejukkan */
+  --surface-color: #ffffff;
+  --surface-border: #e0e0e0;
+  --text-main: #212121;
+  --text-muted: #757575;
+  --success: #4caf50;
+  --danger: #f44336;
 }
 
 * {
@@ -17,13 +17,14 @@
 }
 
 body {
+  font-size: 16px; /* Minimal 12pt */
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   background-color: var(--bg-color);
-  background-image: url('/img/batik.png');
+  /* Gradient overlay to make batik subtle but visible */
+  background-image: linear-gradient(rgba(248, 249, 250, 0.85), rgba(248, 249, 250, 0.85)), url('/img/batik.png');
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
-  background-blend-mode: soft-light;
   color: var(--text-main);
   line-height: 1.5;
 }

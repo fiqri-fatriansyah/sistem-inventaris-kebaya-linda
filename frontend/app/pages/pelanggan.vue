@@ -28,17 +28,42 @@
             <th>Telephone</th>
             <th>Alamat</th>
             <th>Email</th>
+            <th>Penyewaan Aktif</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="c in customers" :key="c._id">
-            <td>{{ c.name }}</td>
-            <td>{{ c.telephone }}</td>
-            <td>{{ c.address || '-' }}</td>
-            <td>{{ c.email || '-' }}</td>
-          </tr>
+          <template v-for="c in customers" :key="c._id">
+            <tr style="cursor: pointer; transition: background 0.2s;" @click="toggleRow(c._id)" :style="expandedRow === c._id ? 'background: #f0f0f0;' : ''">
+              <td>{{ c.name }}</td>
+              <td>{{ c.telephone }}</td>
+              <td>{{ c.address || '-' }}</td>
+              <td>{{ c.email || '-' }}</td>
+              <td>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: var(--primary-hover);">
+                  {{ expandedRow === c._id ? 'Tutup' : 'Lihat Sewa' }}
+                </button>
+              </td>
+            </tr>
+            <tr v-if="expandedRow === c._id">
+              <td colspan="5" style="background: #fafafa; padding: 15px; border-bottom: 1px solid var(--surface-border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                <div v-if="getRentalsForCustomer(c._id).length > 0">
+                  <h4 style="margin-bottom: 10px; color: var(--primary-color);">Daftar Kebaya yang Sedang Disewa:</h4>
+                  <ul style="padding-left: 20px; font-size: 0.9rem;">
+                    <li v-for="r in getRentalsForCustomer(c._id)" :key="r._id" style="margin-bottom: 5px;">
+                      <strong>{{ r.kebayaId.jenis }} ({{ r.kebayaId.warna }})</strong> - 
+                      <em>Jatuh Tempo: {{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}</em>
+                      <span v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; font-weight: bold; margin-left: 10px;">[TELAT]</span>
+                    </li>
+                  </ul>
+                </div>
+                <div v-else style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">
+                  Pelanggan ini tidak sedang menyewa kebaya.
+                </div>
+              </td>
+            </tr>
+          </template>
           <tr v-if="customers.length === 0">
-            <td colspan="4" style="text-align: center; padding: 20px">Belum ada data pelanggan</td>
+            <td colspan="5" style="text-align: center; padding: 20px">Belum ada data pelanggan</td>
           </tr>
         </tbody>
       </table>
@@ -50,16 +75,33 @@
 import { ref, onMounted } from 'vue';
 import { useApi } from '../composables/useApi';
 
-const { getCustomers } = useApi();
+const { getCustomers, getActiveRentals } = useApi();
 const customers = ref<any[]>([]);
+const activeRentals = ref<any[]>([]);
 const pending = ref(true);
 const showForm = ref(false);
+const expandedRow = ref<string | null>(null);
 const form = ref({ name: '', telephone: '', address: '', email: '' });
 
-const fetchCustomers = async () => {
+const fetchData = async () => {
   pending.value = true;
   customers.value = await getCustomers();
+  
+  // Sort rentals by expectedReturnDate ascending so closest/late returns are first
+  const rawRentals = await getActiveRentals();
+  activeRentals.value = rawRentals.sort((a: any, b: any) => 
+    new Date(a.expectedReturnDate).getTime() - new Date(b.expectedReturnDate).getTime()
+  );
+  
   pending.value = false;
+};
+
+const toggleRow = (id: string) => {
+  expandedRow.value = expandedRow.value === id ? null : id;
+};
+
+const getRentalsForCustomer = (customerId: string) => {
+  return activeRentals.value.filter(r => r.customerId && r.customerId._id === customerId);
 };
 
 const addCustomer = async () => {
@@ -73,12 +115,12 @@ const addCustomer = async () => {
     });
     showForm.value = false;
     form.value = { name: '', telephone: '', address: '', email: '' };
-    fetchCustomers();
+    fetchData();
   } catch (err) {
     alert('Gagal menambah pelanggan');
   }
 };
 
-onMounted(fetchCustomers);
+onMounted(fetchData);
 </script>
 <style scoped>label { font-size: 0.9em; font-weight: 500; display: block; margin-bottom: 5px; color: var(--text-muted); }</style>

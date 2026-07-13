@@ -28,30 +28,10 @@
       </div>
     </div>
 
-    <!-- The rest remains identical -->
     <div class="material-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Penyewaan Aktif</h2>
-        <button class="btn" @click="showForm = true">Sewa Kebaya</button>
-      </div>
-
-      <div v-if="showForm" style="margin-bottom: 20px; padding: 15px; border: 1px solid var(--surface-border); border-radius: 8px;">
-        <label>Pelanggan</label>
-        <select v-model="form.customerId" class="input">
-          <option value="" disabled>Pilih Pelanggan</option>
-          <option v-for="c in customers" :key="c._id" :value="c._id">{{ c.name }}</option>
-        </select>
-        
-        <label>Kebaya</label>
-        <select v-model="form.kebayaId" class="input">
-          <option value="" disabled>Pilih Kebaya</option>
-          <option v-for="k in availableKebayas" :key="k._id" :value="k._id">
-            {{ k.jenis }} - {{ k.warna }} (Stok: {{ k.availableStock }})
-          </option>
-        </select>
-
-        <button class="btn" @click="rentKebaya" style="margin-top: 10px">Sewa</button>
-        <button class="btn" @click="showForm = false" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
+        <button class="btn" @click="router.push('/')">Penyewaan Cepat (Halaman Utama)</button>
       </div>
 
       <div v-if="pending">Memuat...</div>
@@ -61,6 +41,7 @@
             <th>Pelanggan</th>
             <th>Kebaya</th>
             <th>Waktu Pinjam</th>
+            <th>Jatuh Tempo</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -75,11 +56,15 @@
             </td>
             <td>{{ new Date(r.rentalStartTime).toLocaleDateString('id-ID') }}</td>
             <td>
-              <button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.9em; color: #fff;" @click="returnKebaya(r._id, r.kebayaId?.price || 0)">Kembalikan</button>
+              {{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}
+              <span v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; font-weight: bold; margin-left: 5px;">[TELAT]</span>
+            </td>
+            <td>
+              <button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.9em; color: #fff;" @click="returnKebaya(r._id)">Kembalikan</button>
             </td>
           </tr>
           <tr v-if="rentals.length === 0">
-            <td colspan="4" style="text-align: center; padding: 20px;">Tidak ada penyewaan aktif</td>
+            <td colspan="5" style="text-align: center; padding: 20px;">Tidak ada penyewaan aktif</td>
           </tr>
         </tbody>
       </table>
@@ -88,57 +73,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useApi } from '../composables/useApi';
 
-const { getActiveRentals, getKebayas, getCustomers } = useApi();
+const router = useRouter();
+const { getActiveRentals } = useApi();
 const rentals = ref<any[]>([]);
-const kebayas = ref<any[]>([]);
-const customers = ref<any[]>([]);
 const pending = ref(true);
-const showForm = ref(false);
-const form = ref({ customerId: '', kebayaId: '' });
 const financialRange = ref('monthly');
-
-const availableKebayas = computed(() => kebayas.value.filter(k => k.availableStock > 0));
 
 const fetchData = async () => {
   pending.value = true;
   rentals.value = await getActiveRentals();
-  kebayas.value = await getKebayas();
-  customers.value = await getCustomers();
   pending.value = false;
 };
 
-const rentKebaya = async () => {
-  if (!form.value.customerId || !form.value.kebayaId) return alert('Silakan pilih pelanggan dan kebaya');
-  
-  try {
-    await fetch('http://localhost:3001/api/rentals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
-    });
-    showForm.value = false;
-    form.value = { customerId: '', kebayaId: '' };
-    fetchData();
-  } catch (err) {
-    alert('Gagal menyewa kebaya');
-  }
-};
-
-const returnKebaya = async (rentalId: string, price: number) => {
+const returnKebaya = async (rentalId: string) => {
   if (confirm('Selesaikan penyewaan dan kembalikan kebaya?')) {
     try {
-      await fetch(`http://localhost:3001/api/rentals/${rentalId}/return`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountToPay: price })
+      const res = await fetch(`http://localhost:3001/api/rentals/${rentalId}/return`, {
+        method: 'POST'
       });
-      alert(`Kebaya berhasil dikembalikan!\nTotal Bayar: Rp ${price}`);
+      const data = await res.json();
+      if(data.error) throw new Error(data.error);
+
+      let msg = `Kebaya berhasil dikembalikan!\n\n`;
+      msg += `Biaya Sewa Dasar: Rp ${data.basePay}\n`;
+      if(data.penaltyPay > 0) {
+        msg += `Biaya Denda Keterlambatan: Rp ${data.penaltyPay}\n`;
+      }
+      msg += `\nTotal Tagihan: Rp ${data.total}`;
+      
+      alert(msg);
       fetchData();
-    } catch (err) {
-      alert('Gagal memproses pengembalian');
+    } catch (err: any) {
+      alert('Gagal memproses pengembalian: ' + err.message);
     }
   }
 };

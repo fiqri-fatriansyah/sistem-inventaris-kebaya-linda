@@ -10,7 +10,7 @@ router.get('/stats', async (req: Request, res: Response) => {
   try {
     const rentals = await RentalTransaction.find().populate('kebayaId');
     
-    // Most rented kebaya
+    // Top 5 rented kebaya
     const kebayaCounts: Record<string, number> = {};
     for (const r of rentals) {
       if (r.kebayaId) {
@@ -18,48 +18,40 @@ router.get('/stats', async (req: Request, res: Response) => {
         kebayaCounts[kId] = (kebayaCounts[kId] || 0) + 1;
       }
     }
-    let mostRentedKebayaId = null;
-    let maxK = 0;
-    for (const [id, count] of Object.entries(kebayaCounts)) {
-      if (count > maxK) { maxK = count; mostRentedKebayaId = id; }
+    const popSortedK = Object.entries(kebayaCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const topKebayas = [];
+    for (const [id, count] of popSortedK) {
+      const k = await Kebaya.findById(id);
+      if (k) topKebayas.push({ kebaya: k, count });
     }
-    const mostRentedKebaya = mostRentedKebayaId ? await Kebaya.findById(mostRentedKebayaId) : null;
 
-    // Most active customer
+    // Top 5 active customers
     const customerCounts: Record<string, number> = {};
     for (const r of rentals) {
       customerCounts[r.customerId as string] = (customerCounts[r.customerId as string] || 0) + 1;
     }
-    let mostActiveCustomerId = null;
-    let maxC = 0;
-    for (const [id, count] of Object.entries(customerCounts)) {
-      if (count > maxC) { maxC = count; mostActiveCustomerId = id; }
+    const popSortedC = Object.entries(customerCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const topCustomers = [];
+    for (const [id, count] of popSortedC) {
+      const c = await Customer.findById(id);
+      if (c) topCustomers.push({ customer: c, count });
     }
-    const mostActiveCustomer = mostActiveCustomerId ? await Customer.findById(mostActiveCustomerId) : null;
 
     // Upcoming events
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const upcomingEvents = await Event.find({ date: { $gte: today } }).sort({ date: 1 }).limit(3);
+    const upcomingEvents = await Event.find({ date: { $gte: today } }).sort({ date: 1 }).limit(5);
 
     // TIME SERIES DATA (For Charts)
-    // 1. Revenue per Month (Completed rentals)
     const revenuePerMonth = new Array(12).fill(0);
     const completedRentals = rentals.filter(r => r.status === 'Completed' && r.rentalEndTime);
     for (const r of completedRentals) {
-      const month = new Date(r.rentalEndTime!).getMonth(); // 0 - 11
+      const month = new Date(r.rentalEndTime!).getMonth();
       revenuePerMonth[month] += r.amountToPay || 0;
     }
 
-    // 2. Kebaya Popularity (Pie Chart) - Top 5
-    const popSorted = Object.entries(kebayaCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const kebayaPopularity = [];
-    for (const [id, count] of popSorted) {
-      const k = await Kebaya.findById(id);
-      if (k) kebayaPopularity.push({ label: `${k.jenis} (${k.warna})`, count });
-    }
+    const kebayaPopularity = topKebayas.map(t => ({ label: `${t.kebaya.jenis} (${t.kebaya.warna})`, count: t.count }));
 
-    // 3. Rentals over time (Line chart) - By Month
     const rentalsPerMonth = new Array(12).fill(0);
     for (const r of rentals) {
       const month = new Date(r.rentalStartTime).getMonth();
@@ -67,8 +59,8 @@ router.get('/stats', async (req: Request, res: Response) => {
     }
 
     res.json({
-      mostRentedKebaya: mostRentedKebaya ? { kebaya: mostRentedKebaya, count: maxK } : null,
-      mostActiveCustomer: mostActiveCustomer ? { customer: mostActiveCustomer, count: maxC } : null,
+      topKebayas,
+      topCustomers,
       upcomingEvents,
       charts: {
         revenuePerMonth,
@@ -76,6 +68,25 @@ router.get('/stats', async (req: Request, res: Response) => {
         rentalsPerMonth
       }
     });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint to get late and soon-to-be-due rentals
+router.get('/due', async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 2); // Up to end of tomorrow
+
+    const dueRentals = await RentalTransaction.find({ 
+      status: 'Active',
+      expectedReturnDate: { $lt: tomorrow }
+    }).populate('customerId kebayaId').sort({ expectedReturnDate: 1 });
+
+    res.json(dueRentals);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

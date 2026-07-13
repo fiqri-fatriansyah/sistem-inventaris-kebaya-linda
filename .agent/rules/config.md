@@ -5,6 +5,8 @@ trigger: always_on
 # Constraints and Rules
 Confirm with me before running any terminal test command or modifying more than 2 files at once.
 Always respond in English.
+Always write implementation plan and task in English.
+Write walkthrough in 2 versions: English and Indonesian
 
 # Security
 Always scan and check external references for vulnerabilities and attack report before downloading and using new package.

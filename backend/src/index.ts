@@ -19,6 +19,7 @@ import rentalRoutes from './routes/rental';
 import eventRoutes from './routes/event';
 import dashboardRoutes from './routes/dashboard';
 import reportsRoutes from './routes/reports';
+import { startCronJobs } from './cron';
 
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
@@ -29,6 +30,8 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
+
+startCronJobs();
 
 // Database Connection
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/kebaya-linda';

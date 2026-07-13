@@ -59,7 +59,18 @@ const error = ref(false);
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 
-const chartOptions = { responsive: true, maintainAspectRatio: false };
+const chartOptions = { 
+  responsive: true, 
+  maintainAspectRatio: false,
+  scales: {
+    y: {
+      ticks: {
+        precision: 0,
+        stepSize: 1
+      }
+    }
+  }
+};
 const pieOptions = { responsive: true, maintainAspectRatio: false };
 
 const revenueChartData = computed(() => {
