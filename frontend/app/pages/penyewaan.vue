@@ -4,12 +4,17 @@
     
     <div class="material-card" style="margin-bottom: 20px;">
       <h3 style="margin-bottom: 10px;">Laporan & Export</h3>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="http://localhost:3001/api/reports/renting" target="_blank">
-          <button class="btn" style="background: #107c41;">Export Laporan Penyewaan</button>
-        </a>
-        <span style="color: var(--surface-border)">|</span>
-        <select v-model="financialRange" class="input" style="width: auto; margin-bottom: 0;">
+      
+      <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+        <strong style="color: var(--text-main);">Laporan Penyewaan:</strong>
+        <a href="http://localhost:3001/api/reports/renting?format=excel" target="_blank"><button class="btn" style="background: #107c41; padding: 5px 15px; font-size: 0.8rem;">Excel</button></a>
+        <a href="http://localhost:3001/api/reports/renting?format=word" target="_blank"><button class="btn" style="background: #2b579a; padding: 5px 15px; font-size: 0.8rem;">Word</button></a>
+        <a href="http://localhost:3001/api/reports/renting?format=pdf" target="_blank"><button class="btn" style="background: #c62828; padding: 5px 15px; font-size: 0.8rem;">PDF</button></a>
+      </div>
+
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <strong style="color: var(--text-main);">Laporan Keuangan:</strong>
+        <select v-model="financialRange" class="input" style="width: auto; margin-bottom: 0; padding: 5px;">
           <option value="daily">Harian</option>
           <option value="weekly">Mingguan</option>
           <option value="monthly">Bulanan</option>
@@ -17,12 +22,13 @@
           <option value="yearly">Tahunan</option>
           <option value="">Semua Waktu</option>
         </select>
-        <a :href="'http://localhost:3001/api/reports/financial?range=' + financialRange" target="_blank">
-          <button class="btn" style="background: #107c41;">Export Laporan Keuangan</button>
-        </a>
+        <a :href="'http://localhost:3001/api/reports/financial?range=' + financialRange + '&format=excel'" target="_blank"><button class="btn" style="background: #107c41; padding: 5px 15px; font-size: 0.8rem;">Excel</button></a>
+        <a :href="'http://localhost:3001/api/reports/financial?range=' + financialRange + '&format=word'" target="_blank"><button class="btn" style="background: #2b579a; padding: 5px 15px; font-size: 0.8rem;">Word</button></a>
+        <a :href="'http://localhost:3001/api/reports/financial?range=' + financialRange + '&format=pdf'" target="_blank"><button class="btn" style="background: #c62828; padding: 5px 15px; font-size: 0.8rem;">PDF</button></a>
       </div>
     </div>
 
+    <!-- The rest remains identical -->
     <div class="material-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Penyewaan Aktif</h2>
