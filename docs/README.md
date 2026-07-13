@@ -10,3 +10,8 @@ It is built using the MEVN stack (MongoDB, Express.js, Vue 3 / Nuxt 4, Node.js) 
 
 ## Documentation
 - Refer to this directory (`docs/`) for up-to-date documentation on database schemas, API endpoints, and frontend architecture as they are built.
+
+### Database Schemas (MongoDB / Mongoose)
+- **Kebaya**: `name` (String), `type` (String), `price` (Number), `totalStock` (Number), `availableStock` (Number).
+- **Customer**: `name` (String), `contactInfo` (String).
+- **RentalTransaction**: `customerId` (ObjectId, ref: Customer), `kebayaId` (ObjectId, ref: Kebaya), `rentalStartTime` (Date), `rentalEndTime` (Date, optional), `amountToPay` (Number), `status` (String: 'Active' | 'Completed').
