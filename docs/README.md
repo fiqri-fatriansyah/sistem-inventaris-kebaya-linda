@@ -9,7 +9,7 @@ It is built using the MEVN stack (MongoDB, Express.js, Vue 3 / Nuxt 4, Node.js) 
 - **Frontend:** Nuxt 4 + Vue 3 + TypeScript. Language used in UI: Indonesian.
 
 ## Documentation
-- Refer to `docs/Notes.md` for historical feature requests and tracking.
+- This file provides an up-to-date overview of the architecture, database schema, and endpoints.
 
 ### Database Schemas (MongoDB / Mongoose)
 - **Kebaya**: `jenis` (String), `warna` (String), `price` (Number), `totalStock` (Number), `availableStock` (Number), `imageUrl` (String).
