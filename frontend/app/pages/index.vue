@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Hero Section -->
-    <div class="hero-section" style="display: flex; gap: 20px; align-items: center; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+    <div class="hero-section" style="display: flex; gap: 20px; align-items: center; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); color: white; padding: 30px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
       <div style="flex: 1;">
         <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Sistem Inventaris Kebaya Linda</h1>
         <p style="font-size: 1.1rem; opacity: 0.9;">Kelola penyewaan dan inventaris butik dengan mudah dan elegan.</p>
@@ -9,6 +9,12 @@
       <div style="width: 150px; height: 150px; background: rgba(255,255,255,0.2); border-radius: 50%; overflow: hidden; border: 4px solid rgba(255,255,255,0.4);">
         <img src="/img/kebaya_hero.png" style="width: 100%; height: 100%; object-fit: cover;" />
       </div>
+    </div>
+
+    <!-- Announcement Banner -->
+    <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin-bottom: 30px; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
+      <strong style="color: #e65100;">📢 Pengumuman:</strong>
+      <span style="color: #333;">Libur Nasional Idul Adha dan Cuti Bersama pada tanggal 20-21 Agustus. Pastikan stok kebaya aman.</span>
     </div>
 
     <!-- 1. Quick Rent Integrated Form -->
@@ -37,17 +43,20 @@
         <!-- Pilih Kebaya -->
         <div>
           <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Pilih Kebaya</h3>
-          <div style="margin-bottom: 15px;">
-            <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Pilih Kebaya Tersedia</label>
-            <select v-model="quickForm.kebayaId" class="input" @change="calculateCost">
-              <option value="" disabled>-- Pilih Kebaya --</option>
-              <option v-for="k in availableKebayas" :key="k._id" :value="k._id">
-                {{ k.jenis }} - {{ k.warna }} (Rp {{ k.price }})
-              </option>
-            </select>
+          <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: flex-start;">
+            <div style="flex: 1;">
+              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Pilih Kebaya Tersedia</label>
+              <select v-model="quickForm.kebayaId" class="input" @change="calculateCost" style="margin-bottom: 0;">
+                <option value="" disabled>-- Pilih Kebaya --</option>
+                <option v-for="k in availableKebayas" :key="k._id" :value="k._id">
+                  {{ k.jenis }} - {{ k.warna }} (Rp {{ k.price }})
+                </option>
+              </select>
+            </div>
             <!-- Tampilkan gambar kebaya yang dipilih -->
-            <div v-if="selectedKebaya && selectedKebaya.imageUrl" style="margin-top: 10px;">
-              <img :src="'http://localhost:3001' + selectedKebaya.imageUrl" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--surface-border);" />
+            <div v-if="selectedKebaya" style="flex-shrink: 0;">
+              <img v-if="selectedKebaya.imageUrl" :src="'http://localhost:3001' + selectedKebaya.imageUrl" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--surface-border);" />
+              <div v-else style="width: 80px; height: 80px; background: #eee; border-radius: 8px; border: 2px solid var(--surface-border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #999;">No Img</div>
             </div>
           </div>
         </div>
@@ -72,20 +81,18 @@
         </div>
 
         <div>
-          <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Pengaturan Denda (Opsional)</h3>
+          <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Deposit Pembayaran</h3>
           <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Tipe Denda</label>
-              <select v-model="quickForm.penaltyType" class="input">
-                <option value="None">Tanpa Denda</option>
-                <option value="One-time">Satu Kali (Flat)</option>
-                <option value="Daily">Per Hari</option>
-                <option value="Weekly">Per Minggu</option>
-              </select>
+              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Biaya Deposit (Rp)</label>
+              <input type="number" v-model="quickForm.depositAmount" class="input" placeholder="0" />
             </div>
-            <div style="flex: 1;" v-if="quickForm.penaltyType !== 'None'">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Biaya Denda (Rp)</label>
-              <input type="number" v-model="quickForm.penaltyCost" class="input" />
+            <div style="flex: 1;">
+              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Status Deposit</label>
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 10px;">
+                <input type="checkbox" v-model="quickForm.depositPaid" id="depositPaid" style="width: 20px; height: 20px;" />
+                <label for="depositPaid" style="margin: 0; font-size: 1em; cursor: pointer;">Sudah Dibayar</label>
+              </div>
             </div>
           </div>
         </div>
@@ -107,23 +114,29 @@
             <th>Pelanggan</th>
             <th>Kebaya</th>
             <th>Jatuh Tempo</th>
-            <th>Status</th>
+            <th>Alasan Peringatan</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="r in dueRentals" :key="r._id">
             <td>{{ r.customerId?.name }}</td>
-            <td>{{ r.kebayaId?.jenis }} ({{ r.kebayaId?.warna }})</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img v-if="r.kebayaId?.imageUrl" :src="'http://localhost:3001' + r.kebayaId.imageUrl" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;" />
+                <div v-else style="width: 40px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7em; color: #999;">No Img</div>
+                {{ r.kebayaId?.jenis }} ({{ r.kebayaId?.warna }})
+              </div>
+            </td>
             <td>{{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}</td>
             <td>
-              <strong v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red;">TELAT</strong>
-              <strong v-else style="color: orange;">SEGERA</strong>
+              <strong v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; display: block;">JATUH TEMPO / TELAT</strong>
+              <strong v-if="!r.depositPaid" style="color: orange; display: block;">DEPOSIT BELUM DIBAYAR</strong>
             </td>
-            <td><button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.8rem;" @click="goToReturn(r._id)">Kembalikan</button></td>
+            <td><button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.8rem;" @click="goToReturn(r._id)">Buka Penyewaan</button></td>
           </tr>
           <tr v-if="dueRentals.length === 0">
-            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada kebaya yang telat atau jatuh tempo dalam waktu dekat.</td>
+            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada kebaya yang telat atau deposit yang belum lunas.</td>
           </tr>
         </tbody>
       </table>
@@ -134,8 +147,13 @@
       <div class="material-card">
         <h3 style="margin-bottom: 15px; color: var(--primary-color);">Top 5 Kebaya Terpopuler</h3>
         <ol style="padding-left: 20px; line-height: 1.8;">
-          <li v-for="k in stats?.topKebayas" :key="k.kebaya._id">
-            <strong>{{ k.kebaya.jenis }} ({{ k.kebaya.warna }})</strong> - Dipinjam {{ k.count }} kali
+          <li v-for="k in stats?.topKebayas" :key="k.kebaya._id" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <img v-if="k.kebaya.imageUrl" :src="'http://localhost:3001' + k.kebaya.imageUrl" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;" />
+            <div v-else style="width: 30px; height: 30px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6em; color: #999;">No Img</div>
+            <div style="line-height: 1.2;">
+              <strong>{{ k.kebaya.jenis }} ({{ k.kebaya.warna }})</strong><br/>
+              <span style="font-size: 0.85em; color: var(--text-muted);">Dipinjam {{ k.count }} kali</span>
+            </div>
           </li>
           <li v-if="!stats?.topKebayas?.length" style="list-style: none; color: var(--text-muted);">Belum ada data</li>
         </ol>
@@ -181,8 +199,8 @@ const quickForm = ref({
   kebayaId: '',
   startDate: todayStr,
   returnDate: nextWeekStr,
-  penaltyType: 'None',
-  penaltyCost: 0
+  depositAmount: 0,
+  depositPaid: false
 });
 
 const isNewCustomer = ref(false);
@@ -227,9 +245,15 @@ const fetchData = async () => {
   customers.value = await getCustomers();
   kebayas.value = await getKebayas();
   
-  // Fetch due rentals
-  const dueRes = await fetch('http://localhost:3001/api/dashboard/due');
-  dueRentals.value = await dueRes.json();
+  // Fetch active rentals to check for warnings
+  const activeRes = await fetch('http://localhost:3001/api/rentals');
+  const allActive = await activeRes.json();
+  const today = new Date();
+  
+  dueRentals.value = allActive.filter((r: any) => 
+    r.status === 'Active' && 
+    (new Date(r.expectedReturnDate) < today || !r.depositPaid)
+  );
 };
 
 const goToReturn = (id: string) => {
@@ -267,20 +291,27 @@ const processQuickRent = async () => {
         customerId: finalCustomerId, 
         kebayaId: quickForm.value.kebayaId,
         expectedReturnDate: quickForm.value.returnDate,
-        penaltyType: quickForm.value.penaltyType,
-        penaltyCost: quickForm.value.penaltyCost
+        depositAmount: quickForm.value.depositAmount,
+        depositPaid: quickForm.value.depositPaid
       })
     });
+    
+    // Attempt to download the receipt immediately
+    const resultData = await (await fetch('http://localhost:3001/api/rentals')).json();
+    const newRental = resultData[resultData.length - 1]; // Just for simple UX, normally would return from POST
+    if (newRental && newRental.transactionId) {
+       window.open(`http://localhost:3001/receipts/Deposit_${newRental.transactionId}.pdf`, '_blank');
+    }
 
-    alert('Penyewaan berhasil diproses!');
+    alert('Penyewaan berhasil diproses! Kwitansi Deposit telah dibuat.');
     
     // Reset form
     quickForm.value.customerSearch = '';
     quickForm.value.existingCustomerId = '';
     quickForm.value.newCustomerPhone = '';
     quickForm.value.kebayaId = '';
-    quickForm.value.penaltyType = 'None';
-    quickForm.value.penaltyCost = 0;
+    quickForm.value.depositAmount = 0;
+    quickForm.value.depositPaid = false;
     isNewCustomer.value = false;
     totalCost.value = 0;
     

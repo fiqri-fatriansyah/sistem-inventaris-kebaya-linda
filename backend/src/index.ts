@@ -19,6 +19,8 @@ import rentalRoutes from './routes/rental';
 import eventRoutes from './routes/event';
 import dashboardRoutes from './routes/dashboard';
 import reportsRoutes from './routes/reports';
+import configRoutes from './routes/config';
+import auditRoutes from './routes/audit';
 import { startCronJobs } from './cron';
 
 // Static files for uploads
@@ -30,6 +32,8 @@ app.use('/api/rentals', rentalRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/audit', auditRoutes);
 
 startCronJobs();
 

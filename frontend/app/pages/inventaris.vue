@@ -19,9 +19,9 @@
       </div>
     </div>
 
-    <!-- Add Form -->
+    <!-- Add / Edit Form -->
     <div v-if="showForm" class="material-card" style="margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
-      <h3 style="margin-bottom: 15px;">Tambah Kebaya Baru</h3>
+      <h3 style="margin-bottom: 15px;">{{ isEditing ? 'Edit Kebaya' : 'Tambah Kebaya Baru' }}</h3>
       
       <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Jenis</label>
       <input v-model="form.jenis" class="input" placeholder="Contoh: Kutubaru" />
@@ -39,8 +39,8 @@
       <input type="file" class="input" accept="image/*" @change="handleFileUpload" style="padding: 10px;" />
       
       <div style="margin-top: 15px;">
-        <button class="btn" @click="addKebaya">Simpan</button>
-        <button class="btn" @click="showForm = false" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
+        <button class="btn" @click="saveKebaya">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Baru' }}</button>
+        <button class="btn" @click="cancelEdit" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
       </div>
     </div>
 
@@ -55,7 +55,7 @@
             <th>Harga (Rp)</th>
             <th>Total Stok</th>
             <th>Tersedia</th>
-            <th>Status Sewa</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -68,12 +68,18 @@
               <td>{{ k.jenis }}</td>
               <td>{{ k.warna }}</td>
               <td>{{ k.price }}</td>
-              <td>{{ k.totalStock }}</td>
+              <td>
+                <button @click.stop="adjustStock(k, -1)" style="border:none; background:#eee; cursor:pointer; padding: 2px 6px;">-</button>
+                <span style="margin: 0 5px;">{{ k.totalStock }}</span>
+                <button @click.stop="adjustStock(k, 1)" style="border:none; background:#eee; cursor:pointer; padding: 2px 6px;">+</button>
+              </td>
               <td><strong :style="k.availableStock > 0 ? 'color: var(--success);' : 'color: var(--danger);'">{{ k.availableStock }}</strong></td>
               <td>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: var(--primary-hover);">
-                  {{ expandedRow === k._id ? 'Tutup' : 'Lihat Penyewa' }}
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: var(--primary-hover);" @click.stop="toggleRow(k._id)">
+                  {{ expandedRow === k._id ? 'Tutup' : 'Penyewa' }}
                 </button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; margin-left: 5px; background: #f39c12;" @click.stop="editKebaya(k)">Edit</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; margin-left: 5px; background: var(--danger);" @click.stop="deleteKebaya(k._id)">Hapus</button>
               </td>
             </tr>
             <!-- Expandable Row Content -->
@@ -117,6 +123,8 @@ const showForm = ref(false);
 const searchQuery = ref('');
 const sortBy = ref('jenis_asc');
 const expandedRow = ref<string | null>(null);
+const isEditing = ref(false);
+const editId = ref<string | null>(null);
 
 const form = ref({ jenis: '', warna: '', price: '', totalStock: '' });
 const imageFile = ref<File | null>(null);
@@ -132,7 +140,7 @@ const handleFileUpload = (e: any) => {
   imageFile.value = e.target.files[0];
 };
 
-const addKebaya = async () => {
+const saveKebaya = async () => {
   if (!form.value.jenis || !form.value.warna || !form.value.price || !form.value.totalStock) {
     return alert('Harap isi semua field');
   }
@@ -147,17 +155,54 @@ const addKebaya = async () => {
   }
 
   try {
-    await fetch('http://localhost:3001/api/kebayas', {
-      method: 'POST',
-      body: formData
-    });
-    showForm.value = false;
-    form.value = { jenis: '', warna: '', price: '', totalStock: '' };
-    imageFile.value = null;
+    const url = isEditing.value ? `http://localhost:3001/api/kebayas/${editId.value}` : 'http://localhost:3001/api/kebayas';
+    const method = isEditing.value ? 'PUT' : 'POST';
+
+    await fetch(url, { method, body: formData });
+    cancelEdit();
     fetchData();
   } catch (err) {
-    alert('Gagal menambah kebaya');
+    alert('Gagal menyimpan kebaya');
   }
+};
+
+const cancelEdit = () => {
+  showForm.value = false;
+  isEditing.value = false;
+  editId.value = null;
+  form.value = { jenis: '', warna: '', price: '', totalStock: '' };
+  imageFile.value = null;
+};
+
+const editKebaya = (k: any) => {
+  isEditing.value = true;
+  editId.value = k._id;
+  form.value = { jenis: k.jenis, warna: k.warna, price: k.price, totalStock: k.totalStock };
+  showForm.value = true;
+};
+
+const deleteKebaya = async (id: string) => {
+  if (confirm('Anda yakin ingin menghapus katalog kebaya ini secara permanen?')) {
+    try {
+      await fetch(`http://localhost:3001/api/kebayas/${id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (err) {
+      alert('Gagal menghapus kebaya');
+    }
+  }
+};
+
+const adjustStock = async (k: any, amount: number) => {
+  const newStock = Number(k.totalStock) + amount;
+  if (newStock < 0) return;
+  const newAvailable = Number(k.availableStock) + amount;
+  
+  const formData = new FormData();
+  formData.append('totalStock', String(newStock));
+  formData.append('availableStock', String(newAvailable));
+  
+  await fetch(`http://localhost:3001/api/kebayas/${k._id}`, { method: 'PUT', body: formData });
+  fetchData();
 };
 
 const toggleRow = (id: string) => {

@@ -8,6 +8,7 @@
       </div>
 
       <div v-if="showForm" style="margin-bottom: 20px; padding: 15px; border: 1px solid var(--surface-border); border-radius: 8px;">
+        <h3 style="margin-bottom: 10px;">{{ isEditing ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru' }}</h3>
         <label>Nama Pelanggan *</label>
         <input v-model="form.name" class="input" />
         <label>Telephone *</label>
@@ -16,8 +17,8 @@
         <input v-model="form.address" class="input" />
         <label>Email (Opsional)</label>
         <input v-model="form.email" type="email" class="input" />
-        <button class="btn" @click="addCustomer">Simpan</button>
-        <button class="btn" @click="showForm = false" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
+        <button class="btn" @click="saveCustomer">{{ isEditing ? 'Simpan Perubahan' : 'Simpan' }}</button>
+        <button class="btn" @click="cancelEdit" style="background: #e0e0e0; color: #000; margin-left: 10px;">Batal</button>
       </div>
 
       <div v-if="pending">Memuat...</div>
@@ -29,6 +30,7 @@
             <th>Alamat</th>
             <th>Email</th>
             <th>Penyewaan Aktif</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -39,9 +41,13 @@
               <td>{{ c.address || '-' }}</td>
               <td>{{ c.email || '-' }}</td>
               <td>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: var(--primary-hover);">
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: var(--primary-hover);" @click.stop="toggleRow(c._id)">
                   {{ expandedRow === c._id ? 'Tutup' : 'Lihat Sewa' }}
                 </button>
+              </td>
+              <td>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: #f39c12;" @click.stop="editCustomer(c)">Edit</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; margin-left: 5px; background: var(--danger);" @click.stop="deleteCustomer(c._id)">Hilangkan</button>
               </td>
             </tr>
             <tr v-if="expandedRow === c._id">
@@ -49,10 +55,14 @@
                 <div v-if="getRentalsForCustomer(c._id).length > 0">
                   <h4 style="margin-bottom: 10px; color: var(--primary-color);">Daftar Kebaya yang Sedang Disewa:</h4>
                   <ul style="padding-left: 20px; font-size: 0.9rem;">
-                    <li v-for="r in getRentalsForCustomer(c._id)" :key="r._id" style="margin-bottom: 5px;">
-                      <strong>{{ r.kebayaId.jenis }} ({{ r.kebayaId.warna }})</strong> - 
-                      <em>Jatuh Tempo: {{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}</em>
-                      <span v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; font-weight: bold; margin-left: 10px;">[TELAT]</span>
+                    <li v-for="r in getRentalsForCustomer(c._id)" :key="r._id" style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                      <img v-if="r.kebayaId?.imageUrl" :src="'http://localhost:3001' + r.kebayaId.imageUrl" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;" />
+                      <div v-else style="width: 30px; height: 30px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6em; color: #999;">No Img</div>
+                      <div>
+                        <strong>{{ r.kebayaId.jenis }} ({{ r.kebayaId.warna }})</strong> - 
+                        <em>Jatuh Tempo: {{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}</em>
+                        <span v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; font-weight: bold; margin-left: 10px;">[TELAT]</span>
+                      </div>
                     </li>
                   </ul>
                 </div>
@@ -63,7 +73,7 @@
             </tr>
           </template>
           <tr v-if="customers.length === 0">
-            <td colspan="5" style="text-align: center; padding: 20px">Belum ada data pelanggan</td>
+            <td colspan="6" style="text-align: center; padding: 20px">Belum ada data pelanggan</td>
           </tr>
         </tbody>
       </table>
@@ -80,6 +90,8 @@ const customers = ref<any[]>([]);
 const activeRentals = ref<any[]>([]);
 const pending = ref(true);
 const showForm = ref(false);
+const isEditing = ref(false);
+const editId = ref<string | null>(null);
 const expandedRow = ref<string | null>(null);
 const form = ref({ name: '', telephone: '', address: '', email: '' });
 
@@ -104,20 +116,48 @@ const getRentalsForCustomer = (customerId: string) => {
   return activeRentals.value.filter(r => r.customerId && r.customerId._id === customerId);
 };
 
-const addCustomer = async () => {
+const saveCustomer = async () => {
   if (!form.value.name || !form.value.telephone) return alert('Nama dan Telephone harus diisi');
 
   try {
-    await fetch('http://localhost:3001/api/customers', {
-      method: 'POST',
+    const url = isEditing.value ? `http://localhost:3001/api/customers/${editId.value}` : 'http://localhost:3001/api/customers';
+    const method = isEditing.value ? 'PUT' : 'POST';
+
+    await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value)
     });
-    showForm.value = false;
-    form.value = { name: '', telephone: '', address: '', email: '' };
+    
+    cancelEdit();
     fetchData();
   } catch (err) {
-    alert('Gagal menambah pelanggan');
+    alert('Gagal menyimpan pelanggan');
+  }
+};
+
+const cancelEdit = () => {
+  showForm.value = false;
+  isEditing.value = false;
+  editId.value = null;
+  form.value = { name: '', telephone: '', address: '', email: '' };
+};
+
+const editCustomer = (c: any) => {
+  isEditing.value = true;
+  editId.value = c._id;
+  form.value = { name: c.name, telephone: c.telephone, address: c.address, email: c.email };
+  showForm.value = true;
+};
+
+const deleteCustomer = async (id: string) => {
+  if (confirm('Anda yakin ingin menghilangkan (soft-delete) pelanggan ini?')) {
+    try {
+      await fetch(`http://localhost:3001/api/customers/${id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (err) {
+      alert('Gagal menghilangkan pelanggan');
+    }
   }
 };
 

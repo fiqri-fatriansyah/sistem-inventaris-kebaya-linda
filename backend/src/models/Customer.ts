@@ -5,13 +5,15 @@ export interface ICustomer extends Document {
   telephone: string;
   address?: string;
   email?: string;
+  isActive: boolean;
 }
 
 const CustomerSchema: Schema = new Schema({
   name: { type: String, required: true },
   telephone: { type: String, required: true },
   address: { type: String },
-  email: { type: String }
-}, { timestamps: true });
+  email: { type: String },
+  isActive: { type: Boolean, default: true }
+});
 
-export default mongoose.model<ICustomer>('Customer', CustomerSchema);
+export default mongoose.models.Customer || mongoose.model<ICustomer>('Customer', CustomerSchema);
