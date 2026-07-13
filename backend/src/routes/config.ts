@@ -4,6 +4,8 @@ import AuditLog from '../models/AuditLog';
 import Customer from '../models/Customer';
 import Kebaya from '../models/Kebaya';
 import RentalTransaction from '../models/RentalTransaction';
+import Event from '../models/Event';
+import { fetchPublicHolidays } from '../cron';
 
 const router = Router();
 
@@ -52,13 +54,16 @@ router.post('/wipe', async (req: Request, res: Response) => {
 
     if (wipeAudit) {
       await AuditLog.deleteMany({});
+    } else {
+      await AuditLog.create({
+        action: 'DELETE',
+        entity: 'System',
+        details: `Factory Reset executed (Audit logs preserved)`
+      });
     }
 
-    await AuditLog.create({
-      action: 'DELETE',
-      entity: 'System',
-      details: wipeAudit ? `Factory Reset executed (Audit logs wiped)` : `Factory Reset executed (Audit logs preserved)`
-    });
+    await Event.deleteMany({});
+    await fetchPublicHolidays(new Date().getFullYear());
 
     res.json({ message: 'Semua data berhasil dihapus' });
   } catch (err: any) {

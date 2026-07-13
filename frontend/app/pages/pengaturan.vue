@@ -29,6 +29,54 @@
       </div>
     </div>
 
+    <!-- Audit Log Security -->
+    <div class="material-card" style="margin-top: 30px;">
+      <h2 style="margin-bottom: 20px; color: var(--primary-color);">Log Sistem & Audit</h2>
+      
+      <div v-if="!auditAuthenticated" style="text-align: center; padding: 20px;">
+        <p style="margin-bottom: 15px;">Fitur ini dikunci. Masukkan Master PIN untuk melihat riwayat aktivitas sistem.</p>
+        <input type="password" v-model="auditPin" class="input" placeholder="Masukkan PIN" style="max-width: 200px; display: inline-block; text-align: center;" @keyup.enter="authenticateAudit" />
+        <br/><br/>
+        <button class="btn" @click="authenticateAudit">Buka Kunci</button>
+      </div>
+
+      <div v-else>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0;">Riwayat Aktivitas</h3>
+          <a :href="'http://localhost:3001/api/audit/export/pdf?pin=' + auditPin" target="_blank">
+            <button class="btn" style="background: #c62828; padding: 5px 15px; font-size: 0.9em;">Print PDF Log</button>
+          </a>
+        </div>
+
+        <div v-if="pendingAudit">Memuat log...</div>
+        <table v-else class="table" style="font-size: 0.9em;">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Aksi</th>
+              <th>Entitas</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in auditLogs" :key="log._id">
+              <td>{{ new Date(log.timestamp).toLocaleString('id-ID') }}</td>
+              <td>
+                <span :style="{ fontWeight: 'bold', color: getActionColor(log.action) }">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td>{{ log.entity }}</td>
+              <td>{{ log.details }}</td>
+            </tr>
+            <tr v-if="auditLogs.length === 0">
+              <td colspan="4" style="text-align: center; padding: 20px;">Tidak ada aktivitas terekam.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Danger Zone -->
     <div class="material-card" style="max-width: 600px; margin-top: 30px; border-left: 5px solid var(--danger);">
       <h2 style="margin-bottom: 20px; color: var(--danger);">Zona Bahaya (Danger Zone)</h2>
@@ -62,6 +110,11 @@ const form = ref({ penaltyType: 'None', penaltyCost: 0 });
 
 const wipeAudit = ref(false);
 const wiping = ref(false);
+
+const auditAuthenticated = ref(false);
+const auditPin = ref('');
+const auditLogs = ref<any[]>([]);
+const pendingAudit = ref(false);
 
 const fetchConfig = async () => {
   pending.value = true;
@@ -117,6 +170,35 @@ const executeFactoryReset = async () => {
       alert('Gagal mengeksekusi factory reset: ' + err.message);
     }
     wiping.value = false;
+  }
+};
+
+const authenticateAudit = async () => {
+  pendingAudit.value = true;
+  try {
+    const res = await fetch(`http://localhost:3001/api/audit?pin=${auditPin.value}`);
+    if (res.ok) {
+      auditLogs.value = await res.json();
+      auditAuthenticated.value = true;
+    } else {
+      alert('PIN Salah!');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Terjadi kesalahan koneksi.');
+  }
+  pendingAudit.value = false;
+};
+
+const getActionColor = (action: string) => {
+  switch(action) {
+    case 'CREATE': return 'var(--success)';
+    case 'UPDATE': return '#f39c12';
+    case 'DELETE': return 'var(--danger)';
+    case 'CANCEL': return 'var(--danger)';
+    case 'RENT': return '#2980b9';
+    case 'RETURN': return '#8e44ad';
+    default: return 'var(--text-main)';
   }
 };
 

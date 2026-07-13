@@ -4,7 +4,14 @@ import PDFDocument from 'pdfkit';
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+const requirePin = (req: Request, res: Response, next: any) => {
+  if (req.query.pin !== process.env.MASTER_PIN) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid PIN' });
+  }
+  next();
+};
+
+router.get('/', requirePin, async (req: Request, res: Response) => {
   try {
     const logs = await AuditLog.find().sort({ timestamp: -1 });
     res.json(logs);
@@ -13,7 +20,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/export/pdf', async (req: Request, res: Response) => {
+router.get('/export/pdf', requirePin, async (req: Request, res: Response) => {
   try {
     const logs = await AuditLog.find().sort({ timestamp: -1 });
     
