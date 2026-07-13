@@ -28,3 +28,13 @@ It is built using the MEVN stack (MongoDB, Express.js, Vue 3 / Nuxt 4, Node.js) 
   - `GET /api/rentals/active`: List all active rentals.
   - `POST /api/rentals`: Rent a kebaya (automatically decreases available stock).
   - `POST /api/rentals/:id/return`: Return a kebaya (automatically increases available stock).
+
+### Frontend Architecture (Nuxt 4 / Vue 3)
+- **CSS**: Vanilla CSS in `assets/css/main.css` implementing a dark-mode glassmorphism aesthetic.
+- **Layouts**: `layouts/default.vue` provides the main Sidebar and routing wrapper.
+- **Pages**:
+  - `/` (Dasbor)
+  - `/inventaris` (Inventaris)
+  - `/penyewaan` (Penyewaan)
+  - `/pelanggan` (Pelanggan)
+- **Composables**: `useApi.ts` serves as the global fetch wrapper to call the Express backend.
