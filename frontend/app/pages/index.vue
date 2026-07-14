@@ -25,17 +25,23 @@
         <!-- Data Pelanggan -->
         <div>
           <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Data Pelanggan</h3>
-          <div style="margin-bottom: 15px;">
-            <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Pilih Pelanggan (Ketik untuk mencari)</label>
-            <input list="customerList" v-model="quickForm.customerSearch" class="input" placeholder="Cari nama atau nomor HP..." @change="onCustomerSelect" />
-            <datalist id="customerList">
-              <option v-for="c in customers" :key="c._id" :value="c.name + ' (' + c.telephone + ')'"></option>
-            </datalist>
+          <div style="margin-bottom: 15px; position: relative;">
+            <label style="display: block; font-size: 1em; margin-bottom: 5px;">Ketik untuk mencari</label>
+            <input v-model="quickForm.customerSearch" class="input" placeholder="Cari nama atau nomor HP..." @input="onCustomerInput" @focus="showCustomerDropdown = true" @blur="onCustomerBlur" />
+            
+            <div v-if="showCustomerDropdown && quickForm.customerSearch" style="position: absolute; top: calc(100% - 10px); left: 0; right: 0; background: white; border: 1px solid var(--surface-border); border-radius: 4px; z-index: 10; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+              <div v-for="c in filteredCustomers" :key="c._id" @mousedown.prevent="selectCustomer(c)" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='white'">
+                {{ c.name }} ({{ c.telephone }})
+              </div>
+              <div @mousedown.prevent="selectNewCustomer" style="padding: 10px; cursor: pointer; color: var(--primary-color); font-weight: bold; background: #fafafa;" onmouseover="this.style.background='#eee'" onmouseout="this.style.background='#fafafa'">
+                + Tambah Pelanggan Baru: "{{ quickForm.customerSearch }}"
+              </div>
+            </div>
           </div>
 
           <div v-if="isNewCustomer" style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-color);">
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Pelanggan baru terdeteksi. Silakan lengkapi:</p>
-            <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Telephone *</label>
+            <p style="font-size: 1em; color: var(--text-muted); margin-bottom: 10px;">Pelanggan baru terdeteksi. Silakan lengkapi:</p>
+            <label style="display: block; font-size: 1em; margin-bottom: 5px;">Telephone *</label>
             <input v-model="quickForm.newCustomerPhone" class="input" />
           </div>
         </div>
@@ -45,7 +51,7 @@
           <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Pilih Kebaya</h3>
           <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: flex-start;">
             <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Pilih Kebaya Tersedia</label>
+              <label style="display: block; font-size: 1em; margin-bottom: 5px;">Pilih Kebaya Tersedia</label>
               <select v-model="quickForm.kebayaId" class="input" @change="calculateCost" style="margin-bottom: 0;">
                 <option value="" disabled>-- Pilih Kebaya --</option>
                 <option v-for="k in availableKebayas" :key="k._id" :value="k._id">
@@ -55,8 +61,8 @@
             </div>
             <!-- Tampilkan gambar kebaya yang dipilih -->
             <div v-if="selectedKebaya" style="flex-shrink: 0;">
-              <img v-if="selectedKebaya.imageUrl" :src="'http://localhost:3001' + selectedKebaya.imageUrl" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--surface-border);" />
-              <div v-else style="width: 80px; height: 80px; background: #eee; border-radius: 8px; border: 2px solid var(--surface-border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #999;">No Img</div>
+              <img v-if="selectedKebaya.imageUrl" :src="'http://localhost:3001' + selectedKebaya.imageUrl" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid var(--surface-border);" />
+              <div v-else style="width: 150px; height: 150px; background: #eee; border-radius: 8px; border: 2px solid var(--surface-border); display: flex; align-items: center; justify-content: center; font-size: 1em; color: #999;">No Img</div>
             </div>
           </div>
         </div>
@@ -68,34 +74,27 @@
           <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Durasi & Waktu</h3>
           <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Waktu Sewa</label>
+              <label style="display: block; font-size: 1em; margin-bottom: 5px;">Waktu Sewa</label>
               <input type="date" v-model="quickForm.startDate" class="input" @change="onStartDateChange" />
             </div>
             <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Kembali (Ekspektasi)</label>
+              <label style="display: block; font-size: 1em; margin-bottom: 5px;">Kembali (Ekspektasi)</label>
               <input type="date" v-model="quickForm.returnDate" class="input" @change="onReturnDateChange" />
             </div>
           </div>
-          <p style="font-weight: bold;">Durasi: <span style="color: var(--primary-color);">{{ rentalDuration }} Hari</span></p>
+          <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">Durasi: <span style="color: var(--primary-color);">{{ rentalDuration }} Hari</span></p>
           <p style="font-weight: bold; font-size: 1.2rem; margin-bottom: 5px;">Total Biaya: <span style="color: var(--success);">Rp {{ totalCost }}</span></p>
-          <p v-if="quickForm.depositAmount > 0" style="font-weight: bold; font-size: 1rem; color: var(--text-main);">
-            Sisa Tagihan: <span style="color: var(--danger);">Rp {{ Math.max(0, totalCost - quickForm.depositAmount) }}</span>
+          <p v-if="quickForm.initialPayment > 0" style="font-weight: bold; font-size: 1rem; color: var(--text-main);">
+            Sisa Tagihan: <span style="color: var(--danger);">Rp {{ Math.max(0, totalCost - quickForm.initialPayment) }}</span>
           </p>
         </div>
 
         <div>
-          <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Deposit Pembayaran</h3>
+          <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Deposit</h3>
           <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Biaya Deposit (Rp)</label>
-              <input type="number" v-model="quickForm.depositAmount" class="input" placeholder="0" />
-            </div>
-            <div style="flex: 1;">
-              <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Status Deposit</label>
-              <div style="display: flex; align-items: center; gap: 10px; padding-top: 10px;">
-                <input type="checkbox" v-model="quickForm.depositPaid" id="depositPaid" style="width: 20px; height: 20px;" />
-                <label for="depositPaid" style="margin: 0; font-size: 1em; cursor: pointer;">Sudah Dibayar</label>
-              </div>
+              <label style="display: block; font-size: 1em; margin-bottom: 5px;">Nominal terbayar</label>
+              <input type="number" v-model="quickForm.initialPayment" class="input" placeholder="0" />
             </div>
           </div>
         </div>
@@ -111,7 +110,8 @@
     <!-- 2. Daftar Kebaya Telat / Jatuh Tempo -->
     <div class="material-card" style="margin-bottom: 30px; border-left: 5px solid var(--danger);">
       <h2 style="margin-bottom: 20px; color: var(--danger);">2. Peringatan: Telat & Jatuh Tempo</h2>
-      <table class="table">
+      <div style="overflow-x: auto; width: 100%;">
+        <table class="table">
         <thead>
           <tr>
             <th>Pelanggan</th>
@@ -127,35 +127,50 @@
             <td>
               <div style="display: flex; align-items: center; gap: 10px;">
                 <img v-if="r.kebayaId?.imageUrl" :src="'http://localhost:3001' + r.kebayaId.imageUrl" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;" />
-                <div v-else style="width: 40px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7em; color: #999;">No Img</div>
+                <div v-else style="width: 40px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1em; color: #999;">No Img</div>
                 {{ r.kebayaId?.jenis }} ({{ r.kebayaId?.warna }})
               </div>
             </td>
             <td>{{ new Date(r.expectedReturnDate).toLocaleDateString('id-ID') }}</td>
             <td>
-              <strong v-if="new Date(r.expectedReturnDate) < new Date()" style="color: red; display: block;">JATUH TEMPO / TELAT</strong>
-              <strong v-if="!r.depositPaid" style="color: orange; display: block;">DEPOSIT BELUM DIBAYAR</strong>
+              <strong v-if="r.status === 'Active' && new Date(r.expectedReturnDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)" style="color: red; display: block; font-size: 1rem;">JATUH TEMPO PENGEMBALIAN</strong>
+              <strong v-if="['Booked', 'Ready'].includes(r.status) && new Date(r.rentalStartTime).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)" style="color: orange; display: block; font-size: 1rem;">TELAT PICKUP</strong>
+              <strong v-if="!r.depositPaid && (!r.payments || r.payments.length === 0)" style="color: #d35400; display: block; font-size: 1rem;">BELUM DEPOSIT SAMA SEKALI</strong>
+              <strong v-if="!r.depositPaid && r.payments && r.payments.length > 0" style="color: #e67e22; display: block; font-size: 1rem;">DEPOSIT PARSIAL (BELUM LUNAS)</strong>
             </td>
-            <td><button class="btn" style="background: var(--success); padding: 5px 10px; font-size: 0.8rem;" @click="goToReturn(r._id)">Buka Penyewaan</button></td>
+            <td>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn" style="flex: 1; min-width: 90px; text-align: center; padding: 6px 12px; font-size: 1em; white-space: nowrap;" @click="goToReturn(r._id)">Proses</button>
+                <a v-if="r.customerId && r.customerId.telephone" 
+                   :href="getWaLink(r.customerId.telephone, 'Halo Kak ' + r.customerId.name + ', mengingatkan bahwa sewaan kebaya Anda ' + (new Date(r.expectedReturnDate) < new Date() ? 'sudah TELAT' : 'jatuh tempo pada ' + new Date(r.expectedReturnDate).toLocaleDateString('id-ID')) + '. Mohon dikembalikan ya!')" 
+                   target="_blank" 
+                   class="btn" 
+                   style="flex: 1; min-width: 90px; text-align: center; padding: 6px 12px; font-size: 1em; background: #25D366; text-decoration: none; white-space: nowrap;"
+                   title="Kirim Pengingat WhatsApp">
+                  💬 WA
+                </a>
+              </div>
+            </td>
           </tr>
           <tr v-if="dueRentals.length === 0">
             <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Tidak ada kebaya yang telat atau deposit yang belum lunas.</td>
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- 3. Small Dashboard (Top 5) -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
       <div class="material-card">
         <h3 style="margin-bottom: 15px; color: var(--primary-color);">Top 5 Kebaya Terpopuler</h3>
-        <ol style="padding-left: 20px; line-height: 1.8;">
-          <li v-for="k in stats?.topKebayas" :key="k.kebaya._id" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <img v-if="k.kebaya.imageUrl" :src="'http://localhost:3001' + k.kebaya.imageUrl" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;" />
-            <div v-else style="width: 30px; height: 30px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6em; color: #999;">No Img</div>
-            <div style="line-height: 1.2;">
-              <strong>{{ k.kebaya.jenis }} ({{ k.kebaya.warna }})</strong><br/>
-              <span style="font-size: 0.85em; color: var(--text-muted);">Dipinjam {{ k.count }} kali</span>
+        <ol style="padding-left: 20px; line-height: 1.8; font-size: 1rem;">
+          <li v-for="k in stats?.topKebayas" :key="k.kebaya._id" style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <img v-if="k.kebaya.imageUrl" :src="'http://localhost:3001' + k.kebaya.imageUrl" style="width: 60px; height: 60px; border-radius: 4px; object-fit: cover;" />
+            <div v-else style="width: 60px; height: 60px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1em; color: #999;">No Img</div>
+            <div style="line-height: 1.4;">
+              <strong style="font-size: 1.1em;">{{ k.kebaya.jenis }} ({{ k.kebaya.warna }})</strong><br/>
+              <span style="font-size: 1em; color: var(--text-muted);">Disewa {{ k.count }} kali</span>
             </div>
           </li>
           <li v-if="!stats?.topKebayas?.length" style="list-style: none; color: var(--text-muted);">Belum ada data</li>
@@ -164,9 +179,9 @@
 
       <div class="material-card">
         <h3 style="margin-bottom: 15px; color: var(--success);">Top 5 Pelanggan Teraktif</h3>
-        <ol style="padding-left: 20px; line-height: 1.8;">
-          <li v-for="c in stats?.topCustomers" :key="c.customer._id">
-            <strong>{{ c.customer.name }}</strong> - Menyewa {{ c.count }} kali
+        <ol style="padding-left: 20px; line-height: 1.8; font-size: 1rem;">
+          <li v-for="c in stats?.topCustomers" :key="c.customer._id" style="margin-bottom: 10px;">
+            <strong style="font-size: 1.1em;">{{ c.customer.name }}</strong> - Menyewa {{ c.count }} kali
           </li>
           <li v-if="!stats?.topCustomers?.length" style="list-style: none; color: var(--text-muted);">Belum ada data</li>
         </ol>
@@ -190,11 +205,17 @@ const customers = ref<any[]>([]);
 const kebayas = ref<any[]>([]);
 const processing = ref(false);
 const upcomingHoliday = ref<any>(null);
+const waLinkType = ref('App');
 
-const todayStr = new Date().toISOString().split('T')[0];
+const getLocalDate = (date: Date) => {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().split('T')[0];
+};
+
+const todayStr = getLocalDate(new Date());
 const defaultReturn = new Date();
 defaultReturn.setDate(defaultReturn.getDate() + 2);
-const defaultReturnStr = defaultReturn.toISOString().split('T')[0];
+const defaultReturnStr = getLocalDate(defaultReturn);
 
 const quickForm = ref({
   customerSearch: '',
@@ -203,8 +224,7 @@ const quickForm = ref({
   kebayaId: '',
   startDate: todayStr,
   returnDate: defaultReturnStr,
-  depositAmount: 0,
-  depositPaid: false
+  initialPayment: 0
 });
 
 const isNewCustomer = ref(false);
@@ -214,19 +234,44 @@ const totalCost = ref(0);
 const availableKebayas = computed(() => kebayas.value.filter(k => k.availableStock > 0));
 const selectedKebaya = computed(() => kebayas.value.find(k => k._id === quickForm.value.kebayaId));
 
-const onCustomerSelect = () => {
-  const input = quickForm.value.customerSearch;
-  const found = customers.value.find(c => `${c.name} (${c.telephone})` === input);
-  if (found) {
-    quickForm.value.existingCustomerId = found._id;
-    isNewCustomer.value = false;
-  } else if (input.trim() !== '') {
-    quickForm.value.existingCustomerId = '';
+const showCustomerDropdown = ref(false);
+
+const filteredCustomers = computed(() => {
+  if (!quickForm.value.customerSearch) return [];
+  const q = quickForm.value.customerSearch.toLowerCase();
+  return customers.value.filter(c => 
+    c.name.toLowerCase().includes(q) || 
+    c.telephone.includes(q)
+  );
+});
+
+const onCustomerInput = () => {
+  showCustomerDropdown.value = true;
+  quickForm.value.existingCustomerId = '';
+  isNewCustomer.value = true; // assume new until selected from list
+};
+
+const onCustomerBlur = () => {
+  showCustomerDropdown.value = false;
+  if (!quickForm.value.existingCustomerId && quickForm.value.customerSearch.trim() !== '') {
     isNewCustomer.value = true;
-  } else {
-    quickForm.value.existingCustomerId = '';
+  } else if (quickForm.value.customerSearch.trim() === '') {
     isNewCustomer.value = false;
+    quickForm.value.existingCustomerId = '';
   }
+};
+
+const selectCustomer = (c: any) => {
+  quickForm.value.customerSearch = `${c.name} (${c.telephone})`;
+  quickForm.value.existingCustomerId = c._id;
+  isNewCustomer.value = false;
+  showCustomerDropdown.value = false;
+};
+
+const selectNewCustomer = () => {
+  quickForm.value.existingCustomerId = '';
+  isNewCustomer.value = true;
+  showCustomerDropdown.value = false;
 };
 
 let returnDateManuallyChanged = false;
@@ -235,7 +280,7 @@ const onStartDateChange = () => {
   if (!returnDateManuallyChanged) {
     const start = new Date(quickForm.value.startDate);
     start.setDate(start.getDate() + 2);
-    quickForm.value.returnDate = start.toISOString().split('T')[0];
+    quickForm.value.returnDate = getLocalDate(start);
   }
   calculateCost();
 };
@@ -268,18 +313,24 @@ const fetchData = async () => {
   // Fetch active rentals to check for warnings
   const activeRes = await fetch('http://localhost:3001/api/rentals');
   const allActive = await activeRes.json();
-  const today = new Date();
+  const todayZero = new Date();
+  todayZero.setHours(0,0,0,0);
   
-  dueRentals.value = allActive.filter((r: any) => 
-    r.status === 'Active' && 
-    (new Date(r.expectedReturnDate) < today || !r.depositPaid)
-  );
+  dueRentals.value = allActive.filter((r: any) => {
+    const startZero = new Date(r.rentalStartTime);
+    startZero.setHours(0,0,0,0);
+    const endZero = new Date(r.expectedReturnDate);
+    endZero.setHours(0,0,0,0);
+
+    if (r.status === 'Active' && endZero < todayZero) return true;
+    if (['Booked', 'Ready'].includes(r.status) && startZero < todayZero) return true;
+    if (['Booked', 'Ready', 'Active'].includes(r.status) && !r.depositPaid && startZero <= todayZero) return true;
+    return false;
+  });
 
   try {
-    const eventsRes = await fetch(`http://localhost:3001/api/events?year=${today.getFullYear()}`);
+    const eventsRes = await fetch(`http://localhost:3001/api/events?year=${todayZero.getFullYear()}`);
     const eventsData = await eventsRes.json();
-    const todayZero = new Date();
-    todayZero.setHours(0,0,0,0);
     const nextHoliday = eventsData.find((e: any) => new Date(e.date) >= todayZero && e.isPublicHoliday);
     if (nextHoliday) {
       // Only show if it's within the next 30 days
@@ -292,10 +343,33 @@ const fetchData = async () => {
   } catch (err) {
     console.error('Failed to load upcoming holiday');
   }
+
+  try {
+    const cfgRes = await fetch('http://localhost:3001/api/config');
+    const cfgData = await cfgRes.json();
+    if (cfgData) waLinkType.value = cfgData.waLinkType || 'App';
+  } catch(e) {}
 };
 
 const goToReturn = (id: string) => {
   router.push('/penyewaan');
+};
+
+const formatWaNumber = (phone: string) => {
+  if(!phone) return '';
+  let num = phone.replace(/[^0-9]/g, '');
+  if (num.startsWith('0')) {
+    num = '62' + num.substring(1);
+  }
+  return num;
+};
+
+const getWaLink = (phone: string, text: string) => {
+  const num = formatWaNumber(phone);
+  if (waLinkType.value === 'Web') {
+    return `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(text)}`;
+  }
+  return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
 };
 
 const processQuickRent = async () => {
@@ -322,23 +396,27 @@ const processQuickRent = async () => {
       finalCustomerId = custData._id;
     }
 
-    await fetch('http://localhost:3001/api/rentals', {
+    const res = await fetch('http://localhost:3001/api/rentals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         customerId: finalCustomerId, 
         kebayaId: quickForm.value.kebayaId,
+        rentalStartTime: quickForm.value.startDate,
         expectedReturnDate: quickForm.value.returnDate,
-        depositAmount: quickForm.value.depositAmount,
-        depositPaid: quickForm.value.depositPaid
+        initialPayment: quickForm.value.initialPayment,
+        totalCost: totalCost.value
       })
     });
     
-    // Attempt to download the receipt immediately
-    const resultData = await (await fetch('http://localhost:3001/api/rentals')).json();
-    const newRental = resultData[resultData.length - 1]; // Just for simple UX, normally would return from POST
+    if (!res.ok) {
+       const errData = await res.json();
+       throw new Error(errData.error || 'Server error');
+    }
+
+    const newRental = await res.json();
     if (newRental && newRental.transactionId) {
-       window.open(`http://localhost:3001/receipts/Deposit_${newRental.transactionId}.pdf`, '_blank');
+       window.open(`http://localhost:3001/api/receipts/Deposit/${newRental.transactionId}`, '_blank');
     }
 
     alert('Penyewaan berhasil diproses! Kwitansi Deposit telah dibuat.');
@@ -348,8 +426,7 @@ const processQuickRent = async () => {
     quickForm.value.existingCustomerId = '';
     quickForm.value.newCustomerPhone = '';
     quickForm.value.kebayaId = '';
-    quickForm.value.depositAmount = 0;
-    quickForm.value.depositPaid = false;
+    quickForm.value.initialPayment = 0;
     isNewCustomer.value = false;
     totalCost.value = 0;
     

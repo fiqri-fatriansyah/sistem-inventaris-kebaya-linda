@@ -22,19 +22,20 @@
       </div>
 
       <div v-if="pending">Memuat...</div>
-      <table v-else class="table">
+      <div v-else style="overflow-x: auto; width: 100%;">
+        <table class="table">
         <thead>
           <tr>
-            <th>Nama</th>
-            <th>Telephone</th>
-            <th>Alamat</th>
-            <th>Email</th>
+            <th @click="sortBy('name')" style="cursor: pointer;">Nama <span v-if="sortKey === 'name'">{{ sortDesc ? '↓' : '↑' }}</span></th>
+            <th @click="sortBy('telephone')" style="cursor: pointer;">Telephone <span v-if="sortKey === 'telephone'">{{ sortDesc ? '↓' : '↑' }}</span></th>
+            <th @click="sortBy('address')" style="cursor: pointer;">Alamat <span v-if="sortKey === 'address'">{{ sortDesc ? '↓' : '↑' }}</span></th>
+            <th @click="sortBy('email')" style="cursor: pointer;">Email <span v-if="sortKey === 'email'">{{ sortDesc ? '↓' : '↑' }}</span></th>
             <th>Penyewaan Aktif</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
-          <template v-for="c in customers" :key="c._id">
+          <template v-for="c in paginatedCustomers" :key="c._id">
             <tr style="cursor: pointer; transition: background 0.2s;" @click="toggleRow(c._id)" :style="expandedRow === c._id ? 'background: #f0f0f0;' : ''">
               <td>{{ c.name }}</td>
               <td>{{ c.telephone }}</td>
@@ -76,13 +77,32 @@
             <td colspan="6" style="text-align: center; padding: 20px">Belum ada data pelanggan</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+        <div style="font-size: 0.9em;">
+          Tampilkan: 
+          <select v-model="itemsPerPage" class="input" style="width: auto; padding: 2px 5px; margin: 0; display: inline-block;" @change="currentPage = 1">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; font-size: 0.9em;">
+          <button class="btn" :disabled="currentPage === 1" @click="currentPage--" style="background: #e0e0e0; color: #333; padding: 2px 10px;">&lt; Prev</button>
+          <span>Halaman {{ currentPage }} dari {{ totalPages || 1 }}</span>
+          <button class="btn" :disabled="currentPage >= totalPages || totalPages === 0" @click="currentPage++" style="background: #e0e0e0; color: #333; padding: 2px 10px;">Next &gt;</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useApi } from '../composables/useApi';
 
 const { getCustomers, getActiveRentals } = useApi();
@@ -94,6 +114,40 @@ const isEditing = ref(false);
 const editId = ref<string | null>(null);
 const expandedRow = ref<string | null>(null);
 const form = ref({ name: '', telephone: '', address: '', email: '' });
+
+const sortKey = ref('name');
+const sortDesc = ref(false);
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const sortBy = (key: string) => {
+  if (sortKey.value === key) {
+    sortDesc.value = !sortDesc.value;
+  } else {
+    sortKey.value = key;
+    sortDesc.value = false;
+  }
+};
+
+const sortedCustomers = computed(() => {
+  let result = [...customers.value];
+  result.sort((a, b) => {
+    let valA = (a[sortKey.value] || '').toLowerCase();
+    let valB = (b[sortKey.value] || '').toLowerCase();
+    
+    if (valA < valB) return sortDesc.value ? 1 : -1;
+    if (valA > valB) return sortDesc.value ? -1 : 1;
+    return 0;
+  });
+  return result;
+});
+
+const totalPages = computed(() => Math.ceil(sortedCustomers.value.length / itemsPerPage.value));
+
+const paginatedCustomers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return sortedCustomers.value.slice(start, start + itemsPerPage.value);
+});
 
 const fetchData = async () => {
   pending.value = true;

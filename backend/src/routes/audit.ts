@@ -5,8 +5,9 @@ import PDFDocument from 'pdfkit';
 const router = Router();
 
 const requirePin = (req: Request, res: Response, next: any) => {
-  if (req.query.pin !== process.env.MASTER_PIN) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid PIN' });
+  const masterPin = process.env.MASTER_PIN;
+  if (!masterPin || req.query.pin !== masterPin) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid PIN or PIN not configured' });
   }
   next();
 };

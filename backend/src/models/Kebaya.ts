@@ -6,6 +6,8 @@ export interface IKebaya extends Document {
   price: number;
   totalStock: number;
   availableStock: number;
+  laundryStock: number;
+  maintenanceStock: number;
   imageUrl?: string;
 }
 
@@ -15,6 +17,8 @@ const KebayaSchema: Schema = new Schema({
   price: { type: Number, required: true },
   totalStock: { type: Number, required: true },
   availableStock: { type: Number, required: true },
+  laundryStock: { type: Number, default: 0 },
+  maintenanceStock: { type: Number, default: 0 },
   imageUrl: { type: String }
 }, { timestamps: true });
 

@@ -39,7 +39,7 @@
           <tr v-for="e in events" :key="e._id + e.date">
             <td>
               {{ new Date(e.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
-              <span v-if="e.recurring !== 'none'" style="font-size: 0.7em; background: var(--primary-color); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block;">
+              <span v-if="e.recurring !== 'none'" style="font-size: 1em; background: var(--primary-color); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block;">
                  <template v-if="e.recurring === 'weekly'">Mingguan</template>
                  <template v-else-if="e.recurring === 'monthly'">Bulanan</template>
                  <template v-else-if="e.recurring === 'yearly'">Tahunan</template>
@@ -47,12 +47,12 @@
             </td>
             <td>
               {{ e.name }}
-              <span v-if="e.isPublicHoliday" style="font-size: 0.7em; background: var(--danger); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block; margin-top: 5px;">Libur Nasional</span>
+              <span v-if="e.isPublicHoliday" style="font-size: 1em; background: var(--danger); color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; display: inline-block; margin-top: 5px;">Libur Nasional</span>
             </td>
             <td>{{ e.description }}</td>
             <td>
-              <button class="btn" style="background: var(--danger); padding: 5px 10px; font-size: 0.8em;" @click="deleteEvent(e._id)" v-if="!e.isPublicHoliday">Hapus</button>
-              <span v-else style="font-size: 0.8em; color: var(--text-muted); font-style: italic;">Otomatis (Sistem)</span>
+              <button class="btn" style="background: var(--danger); padding: 5px 10px; font-size: 1em;" @click="deleteEvent(e._id)" v-if="!e.isPublicHoliday">Hapus</button>
+              <span v-else style="font-size: 1em; color: var(--text-muted); font-style: italic;">Otomatis (Sistem)</span>
             </td>
           </tr>
         </tbody>
@@ -102,4 +102,4 @@ const deleteEvent = async (id: string) => {
 
 onMounted(fetchEvents);
 </script>
-<style>label { font-size: 0.9em; font-weight: 500; display: block; margin-bottom: 5px; color: var(--text-muted); }</style>
+<style>label { font-size: 1em; font-weight: 500; display: block; margin-bottom: 5px; color: var(--text-muted); }</style>
