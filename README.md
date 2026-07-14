@@ -11,4 +11,3 @@ The frontend communicates with the backend via REST APIs.
 - The application supports an automated setup script (`start.bat`) for Windows users to easily install dependencies and launch the servers.
 - Make sure MongoDB is running before starting the application, or configure the `.env` in the backend folder to point to a cloud MongoDB Atlas instance.
 - Run `start.bat` for first-time launch and local development.
-- Further notes and AI agent rules are located in `.agent/rules` and `docs/Notes.md`.
