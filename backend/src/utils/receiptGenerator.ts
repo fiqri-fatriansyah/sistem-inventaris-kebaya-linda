@@ -2,11 +2,15 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 
-export const generateReceipt = (rental: any, type: 'Deposit' | 'Lunas'): string => {
+export const generateReceipt = (rental: any, type: 'Deposit' | 'Lunas' | 'Parsial', paymentInfo?: any): string => {
   const dir = path.join(__dirname, '../../../public/receipts');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const fileName = `${type}_${rental.transactionId}.pdf`;
+  let fileName = `${type}_${rental.transactionId}.pdf`;
+  if (type === 'Parsial' && paymentInfo) {
+    fileName = `${type}_${rental.transactionId}_${paymentInfo.receiptId}.pdf`;
+  }
+  
   const filePath = path.join(dir, fileName);
 
   const doc = new PDFDocument({ margin: 50 });
@@ -32,6 +36,16 @@ export const generateReceipt = (rental: any, type: 'Deposit' | 'Lunas'): string 
   if (type === 'Deposit') {
     doc.text(`Status Deposit: ${rental.depositPaid ? 'DIBAYAR' : 'BELUM DIBAYAR'}`);
     doc.text(`Jumlah Deposit: Rp ${rental.depositAmount}`);
+  } else if (type === 'Parsial') {
+    doc.text(`Tipe Pembayaran: Cicilan Deposit`);
+    if (paymentInfo) {
+      doc.text(`ID Kwitansi: ${paymentInfo.receiptId}`);
+      doc.text(`Jumlah Dibayar Sekarang: Rp ${paymentInfo.amount}`);
+    }
+    const totalPaid = rental.payments ? rental.payments.reduce((acc: number, curr: any) => acc + curr.amount, 0) : 0;
+    doc.text(`Total Terbayar (termasuk ini): Rp ${totalPaid}`);
+    doc.text(`Total Deposit Disyaratkan: Rp ${rental.depositAmount}`);
+    doc.text(`Status Deposit: ${rental.depositPaid ? 'DIBAYAR' : 'BELUM LUNAS'}`);
   } else {
     // Lunas
     doc.text(`Waktu Pengembalian: ${new Date(rental.rentalEndTime).toLocaleDateString('id-ID')}`);

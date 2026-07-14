@@ -1,4 +1,76 @@
 CURRENT FEEDBACK
+[2026-07-14 03:15]
+- Ran test cases on every use case. E2E test had an outdated math calculation (paid 30000 instead of 130000 for a 150000 deposit), which caused it to fail. Fixed the test case, all tests now pass perfectly.
+
+[2026-07-14 03:14]
+- Change "kwitansi" button label into "aksi", then remove this ugly ▼ symbol, it's redundant. Then, do not show the "aksi" in the dropdown...
+
+[2026-07-14 03:12]
+- The buttons are too crowded... Can you change kwitansi so that the buttons become dropdown action instead?
+
+[2026-07-14 03:10]
+- Still not aligned. Checked the source code and found an empty div wrapper pushing the aksi buttons down by 10px. Fixed.
+
+[2026-07-14 03:07]
+- Buttons in kwitansi and aksi somehow is not aligned horizontally. (Screenshot provided showed vertical misalignment inside the table row).
+
+[2026-07-14 03:07]
+- Buttons in kwitansi and aksi somehow is not aligned horizontally.
+
+[2026-07-14 03:06]
+- The button should be only one line, avoid having two lines in a button.
+
+[2026-07-14 03:05]
+- Buttons in kwitansi and aksi in penyewaan page should also be standardized in size, while still maintaining font size minimum.
+
+[2026-07-14 03:03]
+- The PIN for using demo state and factory reset should be the same, as they will be from the same authority level.
+
+[2026-07-14 02:58]
+- Add sorting for "Inventaris" page
+- Use "RpXXX.XXX.XXX" format for price for better readability.
+- Make "proses" and "wa" button in peringatan table in landing page to be the same in size and adhere to PWA.
+- Omit "(demo)" from kebaya name in dummy data.
+- Omit "(sewa)" from pickup button in penyewaan page.
+- Add more padding/margin/space so that graph legend doesn't collide with bar/pie labels.
+
+[2026-07-14 02:51]
+- Adjust dashboard arrangement to adhere to PWA
+- Increase the size of pie chart and make each pie chart size consistent.
+- If datalabel will potentially be cluttered, show the rest as others.
+- Label position for bar charts should be put accordingly to increase readability. Use Indonesian abbreviations.
+
+[2026-07-14 02:44]
+- Add "PDF DEPOSIT" and "KIRIM WA" button for Kwitansi column for "Deposit Parsial" status.
+- Rearrange "Aksi" button so that the order from top to bottom will be: main action -> reminder -> batal
+
+[2026-07-14 02:38]
+- Add rent order creation date column into "penyewaan" page
+- Default sort by "jatuh tempo", followed by "creation date"
+- Have buttons in "penyewaan" page for most used sorting.
+
+[2026-07-14 02:28]
+- UI: Change "jatuh tempo kembali" to "jatuh tempo pengembalian".
+- UI: Change any wording of "dipinjam" to "disewa".
+- UI: Change any wording of "pinjam" to "sewa".
+- UI: Fix dashboard display to adhere to PWA (make it responsive).
+- Tech: Allow sending WA warning for "dipesan" (Booked) rentals that haven't paid deposit.
+
+[2026-07-14 02:21]
+- Make "penyewaan" page sortable.
+- Remove redundant warnings for deposit parsial/belum deposit in penyewaan page.
+- Need dummy data variation for rent that was partially paid but has finished payment (Active state).
+- Re-add the email kwitansi button, shown when customer has an email address.
+
+[2026-07-14 02:05]
+- Change action name "kembalikan" to "dikembalikan" to reflect that customer has returned it.
+- Aksi column is redundant (Fix table alignment issue).
+- The title page is currently black color on background, unreadable (Fixed readability).
+- Create new graph in dashboard for problematic customers.
+- Make sure that dashboard exports include the new graph.
+- PDF deposit and PDF lunas is broken. Fix it.
+- Add WA option for "kwitansi". Configuration to choose between Download Link vs Text.
+
 Global
 - Pengaturan denda tidak per sewa, namun secara global yang dapat diubah di konfigurasi.
 - Tambahkan sistem deposit, di mana saat penyewaan baru dibuat, pelanggan harus membayar deposit dulu, dengan biaya deposit yang dibayar diamsukkan ke sistem dan akan menjadi pengurang biaya penyewaan saat pelanggan mengembalikan kebaya.

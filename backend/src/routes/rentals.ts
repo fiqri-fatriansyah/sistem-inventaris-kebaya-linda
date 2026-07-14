@@ -13,7 +13,7 @@ const router = Router();
 // Create rental
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { customerId, kebayaId, expectedReturnDate, depositAmount, depositPaid } = req.body;
+    const { customerId, kebayaId, rentalStartTime, expectedReturnDate, initialPayment, totalCost } = req.body;
     
     const kebaya = await Kebaya.findById(kebayaId);
     if (!kebaya || kebaya.availableStock < 1) {
@@ -22,13 +22,29 @@ router.post('/', async (req: Request, res: Response) => {
 
     const transactionId = 'TRX-' + Date.now().toString().slice(-6);
 
+    const targetAmount = totalCost || kebaya.price;
+    const paid = Number(initialPayment) || 0;
+    const depositPaid = paid >= targetAmount;
+
+    const payments = [];
+    if (paid > 0) {
+      payments.push({
+        amount: paid,
+        date: new Date(),
+        receiptId: 'PAY-' + Date.now().toString().slice(-6)
+      });
+    }
+
     const rental = new RentalTransaction({
       transactionId,
       customerId,
       kebayaId,
+      rentalStartTime: rentalStartTime || new Date(),
       expectedReturnDate,
-      depositAmount: depositAmount || 0,
-      depositPaid: depositPaid || false
+      depositAmount: targetAmount,
+      depositPaid: depositPaid,
+      payments: payments,
+      status: depositPaid ? 'Ready' : 'Booked'
     });
 
     kebaya.availableStock -= 1;
@@ -65,12 +81,97 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+// Get active rentals
+router.get('/active', async (req: Request, res: Response) => {
+  try {
+    const rentals = await RentalTransaction.find({ status: 'Active' })
+      .populate('customerId')
+      .populate('kebayaId');
+    res.json(rentals);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Pay Deposit (Full or Partial)
+router.post('/:id/pay-deposit', async (req: Request, res: Response) => {
+  try {
+    const { amount } = req.body;
+    const rental = await RentalTransaction.findById(req.params.id).populate('customerId').populate('kebayaId');
+    if (!rental) return res.status(404).json({ error: 'Rental not found' });
+    if (rental.status !== 'Booked') return res.status(400).json({ error: 'Only Booked rentals can be paid' });
+
+    const payAmount = Number(amount) || rental.depositAmount;
+
+    // Track payment
+    const paymentReceiptId = 'PAY-' + Date.now().toString().slice(-6);
+    const paymentInfo = {
+      amount: payAmount,
+      date: new Date(),
+      receiptId: paymentReceiptId
+    };
+    
+    rental.payments.push(paymentInfo);
+
+    const totalPaid = rental.payments.reduce((acc: number, curr: any) => acc + curr.amount, 0);
+
+    let isFullyPaid = false;
+    if (totalPaid >= rental.depositAmount) {
+      rental.depositPaid = true;
+      rental.status = 'Ready';
+      isFullyPaid = true;
+    }
+
+    await rental.save();
+
+    // Generate Partial Receipt
+    generateReceipt(rental, 'Parsial', paymentInfo);
+
+    // If fully paid, generate the final Deposit receipt as well
+    if (isFullyPaid) {
+      generateReceipt(rental, 'Deposit');
+    }
+
+    await AuditLog.create({
+      action: 'UPDATE',
+      entity: 'Rental',
+      details: `Payment of Rp ${payAmount} received for rental ${rental.transactionId} (Total Paid: ${totalPaid}/${rental.depositAmount}). Status -> ${rental.status}`
+    });
+
+    res.json(rental);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Pickup
+router.post('/:id/pickup', async (req: Request, res: Response) => {
+  try {
+    const rental = await RentalTransaction.findById(req.params.id);
+    if (!rental) return res.status(404).json({ error: 'Rental not found' });
+    if (rental.status !== 'Ready') return res.status(400).json({ error: 'Rental must be Ready (Deposit Paid) before pickup' });
+
+    rental.status = 'Active';
+    await rental.save();
+
+    await AuditLog.create({
+      action: 'UPDATE',
+      entity: 'Rental',
+      details: `Kebaya picked up for rental ${rental.transactionId} (Status -> Active)`
+    });
+
+    res.json(rental);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Return Kebaya
 router.post('/:id/return', async (req: Request, res: Response) => {
   try {
     const rental = await RentalTransaction.findById(req.params.id).populate('customerId').populate('kebayaId');
     if (!rental) return res.status(404).json({ error: 'Rental not found' });
-    if (rental.status !== 'Active') return res.status(400).json({ error: 'Rental is already completed or cancelled' });
+    if (rental.status !== 'Active') return res.status(400).json({ error: 'Only Active rentals can be returned' });
 
     rental.status = 'Completed';
     rental.rentalEndTime = new Date();
@@ -136,7 +237,9 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
   try {
     const rental = await RentalTransaction.findById(req.params.id);
     if (!rental) return res.status(404).json({ error: 'Rental not found' });
-    if (rental.status !== 'Active') return res.status(400).json({ error: 'Only Active rentals can be cancelled' });
+    if (rental.status === 'Completed' || rental.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Cannot cancel an already completed or cancelled rental' });
+    }
 
     rental.status = 'Cancelled';
     await rental.save();

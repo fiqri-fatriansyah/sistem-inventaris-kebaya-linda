@@ -78,4 +78,45 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Transfer Stock
+router.post('/:id/transfer-stock', async (req: Request, res: Response) => {
+  try {
+    const { from, to, amount } = req.body;
+    const qty = parseInt(amount, 10);
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+
+    const kebaya = await Kebaya.findById(req.params.id);
+    if (!kebaya) return res.status(404).json({ error: 'Kebaya not found' });
+
+    // Validate from stock
+    if (from === 'available' && kebaya.availableStock < qty) return res.status(400).json({ error: 'Not enough available stock' });
+    if (from === 'laundry' && kebaya.laundryStock < qty) return res.status(400).json({ error: 'Not enough laundry stock' });
+    if (from === 'maintenance' && kebaya.maintenanceStock < qty) return res.status(400).json({ error: 'Not enough maintenance stock' });
+
+    // Subtract from source
+    if (from === 'available') kebaya.availableStock -= qty;
+    if (from === 'laundry') kebaya.laundryStock -= qty;
+    if (from === 'maintenance') kebaya.maintenanceStock -= qty;
+
+    // Add to destination
+    if (to === 'available') kebaya.availableStock += qty;
+    if (to === 'laundry') kebaya.laundryStock += qty;
+    if (to === 'maintenance') kebaya.maintenanceStock += qty;
+
+    await kebaya.save();
+
+    await AuditLog.create({
+      action: 'UPDATE',
+      entity: 'Kebaya',
+      details: `Transferred ${qty} stock from ${from} to ${to} for kebaya ${kebaya.jenis} (${kebaya.warna})`
+    });
+
+    res.json(kebaya);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

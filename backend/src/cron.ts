@@ -1,7 +1,11 @@
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import RentalTransaction from './models/RentalTransaction';
+import Kebaya from './models/Kebaya';
+import Customer from './models/Customer';
 import Event from './models/Event';
+import Config from './models/Config';
+import { sendWhatsAppMessage, getWhatsAppStatus } from './whatsapp';
 
 // Setup Ethereal Testing Email
 let transporter: nodemailer.Transporter;
@@ -29,14 +33,21 @@ export const startCronJobs = () => {
     console.log('[Cron] Running daily late rental check...');
     try {
       const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
       
       const lateRentals = await RentalTransaction.find({
         status: 'Active',
         expectedReturnDate: { $lt: today }
       }).populate('customerId kebayaId');
 
-      if (lateRentals.length === 0) {
-        console.log('[Cron] No late rentals found today.');
+      const rentalsDueTomorrow = await RentalTransaction.find({
+        status: 'Active',
+        expectedReturnDate: { $gte: new Date(tomorrow.setHours(0,0,0,0)), $lt: new Date(tomorrow.setHours(23,59,59,999)) }
+      }).populate('customerId kebayaId');
+
+      if (lateRentals.length === 0 && rentalsDueTomorrow.length === 0) {
+        console.log('[Cron] No late or upcoming rentals found today.');
         return;
       }
 
@@ -55,6 +66,17 @@ export const startCronJobs = () => {
       });
 
       console.log('[Cron] Email sent successfully! Preview URL: %s', nodemailer.getTestMessageUrl(info));
+
+      const config = await Config.findOne();
+      if (config?.enableWhatsAppBot && getWhatsAppStatus().isReady) {
+        for (const rental of rentalsDueTomorrow) {
+          const c = rental.customerId as any;
+          if (c && c.telephone) {
+            const msg = `Halo Kak ${c.name}, mengingatkan bahwa penyewaan kebaya Anda jatuh tempo besok (${tomorrow.toLocaleDateString('id-ID', {day:'numeric', month:'long'})}). Mohon dikembalikan tepat waktu ya! Terima kasih, Kebaya Linda.`;
+            await sendWhatsAppMessage(c.telephone, msg);
+          }
+        }
+      }
     } catch (err) {
       console.error('[Cron] Error running daily check:', err);
     }
