@@ -59,8 +59,8 @@
             <template v-for="k in paginatedKebayas" :key="k._id">
               <tr style="cursor: pointer; transition: background 0.2s;" @click="toggleRow(k._id)" :style="expandedRow === k._id ? 'background: #f0f0f0;' : ''">
                 <td>
-                  <img v-if="k.imageUrl" :src="'http://localhost:3001' + k.imageUrl" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--surface-border);" />
-                  <div v-else style="width: 60px; height: 60px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1em; color: #999; border: 1px solid var(--surface-border);">No Img</div>
+                  <img v-if="k.imageUrl" :src="'http://localhost:3001' + k.imageUrl" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid var(--surface-border);" />
+                  <div v-else style="width: 150px; height: 150px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1em; color: #999; border: 2px solid var(--surface-border);">No Img</div>
                 </td>
                 <td>{{ k.jenis }}</td>
                 <td>{{ k.warna }}</td>

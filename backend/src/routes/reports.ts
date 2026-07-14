@@ -355,7 +355,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     // PDF and Word: Generate Charts
     const width = 800;
     const height = 400;
-    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ 
+      width, 
+      height,
+      plugins: { modern: [ChartDataLabels as any] }
+    });
     const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
     const numberFormatter = (value: number) => {
@@ -364,11 +368,17 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       return value;
     };
 
-    const barOptions = {
-      layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+    const getBarOptions = () => ({
+      layout: { padding: { top: 20, bottom: 10, left: 10, right: 10 } },
       plugins: {
         legend: { labels: { padding: 20 } },
-        datalabels: { display: false }
+        datalabels: {
+          display: true,
+          color: '#000',
+          anchor: 'end',
+          align: 'top',
+          formatter: numberFormatter
+        }
       },
       scales: {
         y: {
@@ -377,13 +387,19 @@ router.get('/dashboard', async (req: Request, res: Response) => {
           ticks: { callback: numberFormatter }
         }
       }
-    };
+    });
 
-    const lineOptions = {
-      layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+    const getLineOptions = () => ({
+      layout: { padding: { top: 20, bottom: 10, left: 10, right: 10 } },
       plugins: {
         legend: { labels: { padding: 20 } },
-        datalabels: { display: false }
+        datalabels: {
+          display: true,
+          color: '#000',
+          anchor: 'end',
+          align: 'top',
+          formatter: numberFormatter
+        }
       },
       scales: {
         y: {
@@ -392,20 +408,25 @@ router.get('/dashboard', async (req: Request, res: Response) => {
           ticks: { stepSize: 1 }
         }
       }
-    };
+    });
 
-    const pieOptions = {
+    const getPieOptions = (totalData: number) => ({
       layout: { padding: 20 },
       plugins: {
         legend: { labels: { padding: 20 } },
-        datalabels: { display: false }
+        datalabels: {
+          display: totalData > 0, // CRITICAL: Disable on empty pie to prevent plugin crash
+          color: '#fff',
+          font: { weight: 'bold' as const },
+          formatter: (val: number) => val > 0 ? val : ''
+        }
       }
-    };
+    });
 
     const revBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'bar',
       data: { labels: months, datasets: [{ label: 'Pendapatan (Rp)', data: revenuePerMonth, backgroundColor: 'rgba(54, 162, 235, 0.5)' }] },
-      options: barOptions as any
+      options: getBarOptions() as any
     });
     const totalRev = revenuePerMonth.reduce((a, b) => a + b, 0);
     const maxRev = Math.max(...revenuePerMonth);
@@ -414,18 +435,18 @@ router.get('/dashboard', async (req: Request, res: Response) => {
 
     const popLabels = popSorted.map(p => p[0]);
     const popData = popSorted.map(p => p[1]);
+    const totalPop = popData.reduce((a, b) => a + b, 0);
     const popBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'pie',
       data: { labels: popLabels, datasets: [{ label: 'Penyewaan', data: popData, backgroundColor: ['#ff9999','#66b3ff','#99ff99','#ffcc99','#95a5a6'] }] },
-      options: pieOptions as any
+      options: getPieOptions(totalPop) as any
     });
-    const totalPop = popData.reduce((a, b) => a + b, 0);
     const popDesc = popSorted.length > 0 ? `Dari total ${totalPop} penyewaan kebaya, model yang paling banyak disewa adalah ${popLabels[0]} (sebanyak ${popData[0]} kali), diikuti oleh ${popLabels[1] || '-'} (${popData[1] || 0} kali) dan ${popLabels[2] || '-'} (${popData[2] || 0} kali).` : 'Belum ada data penyewaan.';
 
     const volBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'line',
       data: { labels: months, datasets: [{ label: 'Volume Sewa', data: rentalsPerMonth, borderColor: 'rgba(75, 192, 192, 1)', fill: false }] },
-      options: lineOptions as any
+      options: getLineOptions() as any
     });
     const totalVol = rentalsPerMonth.reduce((a, b) => a + b, 0);
     const maxVol = Math.max(...rentalsPerMonth);
@@ -438,34 +459,36 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     const valBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'bar',
       data: { labels: valLabels, datasets: [{ label: 'Total Pendapatan', data: valData, backgroundColor: '#f39c12' }] },
-      options: barOptions as any
+      options: getBarOptions() as any
     });
     const totalVal = valData.reduce((a, b) => a + b, 0);
     const valDesc = `Top 5 pelanggan menyumbang total pendapatan sebesar Rp ${totalVal.toLocaleString('id-ID')}. Pelanggan teratas adalah ${valLabels[0] || 'N/A'} (Rp ${(valData[0] || 0).toLocaleString('id-ID')}), disusul oleh ${valLabels[1] || '-'} (Rp ${(valData[1] || 0).toLocaleString('id-ID')}).`;
 
     // Loyalty Chart
+    const loyTotal = segment1x + segment2x + segment3plus;
     const loyBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'pie',
       data: { labels: ['Sewa 1x', 'Sewa 2x', 'Sewa 3x+'], datasets: [{ data: [segment1x, segment2x, segment3plus], backgroundColor: ['#e74c3c', '#f1c40f', '#2ecc71'] }] },
-      options: pieOptions as any
+      options: getPieOptions(loyTotal) as any
     });
     const loyDesc = `Berdasarkan frekuensi sewa, sebanyak ${segment1x} pelanggan baru melakukan 1 kali transaksi. Terdapat ${segment2x} pelanggan yang menyewa 2 kali, dan ${segment3plus} pelanggan setia yang telah menyewa 3 kali atau lebih.`;
 
-    // Deposit Chart
+    // Deposit Status
+    const depTotal = depositPaid + depositUnpaid;
     const depBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'pie',
-      data: { labels: ['Deposit Lunas', 'Belum Lunas/Belum DP'], datasets: [{ data: [depositPaid, depositUnpaid], backgroundColor: ['#27ae60', '#c0392b'] }] },
-      options: pieOptions as any
+      data: { labels: ['Lunas', 'Belum Lunas'], datasets: [{ data: [depositPaid, depositUnpaid], backgroundColor: ['#3498db', '#e74c3c'] }] },
+      options: getPieOptions(depTotal) as any
     });
     const depDesc = `Terdapat ${depositPaid + depositUnpaid} penyewaan yang sedang berjalan. Dari jumlah tersebut, ${depositPaid} penyewaan telah melunasi deposit, sedangkan ${depositUnpaid} penyewaan belum lunas/belum memberikan DP.`;
 
-    // Problematic Customers Chart
+    // Problematic Customers
     const probLabels = probSorted.map(p => p[0]);
     const probData = probSorted.map(p => p[1]);
     const probBuffer = await chartJSNodeCanvas.renderToBuffer({
       type: 'bar',
       data: { labels: probLabels, datasets: [{ label: 'Poin Masalah', data: probData, backgroundColor: '#c0392b' }] },
-      options: barOptions as any
+      options: getBarOptions() as any
     });
     const probDesc = `Tercatat ${probSorted.length} pelanggan yang memiliki riwayat poin masalah (denda keterlambatan/pembatalan). Pelanggan dengan akumulasi poin tertinggi adalah ${probLabels[0] || 'N/A'} dengan total ${probData[0] || 0} poin, diikuti oleh ${probLabels[1] || '-'} (${probData[1] || 0} poin).`;
 
